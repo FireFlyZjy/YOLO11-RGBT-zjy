@@ -15,6 +15,7 @@ from timm.models.focalnet import FocalModulation
 from ultralytics.nn.ExtraModules import *
 from ultralytics.nn.ExtraModules.SE import *
 from ultralytics.nn.ExtraModules.common import *
+
 from ultralytics.nn.modules import (
     AIFI,
     C1,
@@ -1032,6 +1033,14 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C2fCIB,
             # SE注意力模块
             Conv_SE, CSP_ATT,
+            # 可变形卷积DCNv2
+            C2f_DCN,
+            Conv_AC,
+            # 空洞空间金字塔池化
+            ASPP_Branch,
+            Conv_Blaze, # 适合移动端和边缘计算设备
+            GCBlock, # 进行跨通道的特征重标定
+
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments
@@ -1051,6 +1060,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C2fPSA,
             C2fCIB,
             C2PSA,
+            # 可变形卷积DCNv2
+            C2f_DCN,
         }
     )
     # print(globals())

@@ -1,7 +1,7 @@
 from ultralytics import YOLO
 
  # 加载断点权重（last.pt）
-model = YOLO("runs/LLVIP/26dual-demo/yolo11n-RGBT-midfusion/weights/last.pt")
+model = YOLO("runs/LLVIP/26dual-test/yolo26n-BlazeBlock-V1-RGBT-midfusion/weights/last.pt")
 
 # 继续训练（自动继承上次的优化器、学习率状态）
 results = model.train(
