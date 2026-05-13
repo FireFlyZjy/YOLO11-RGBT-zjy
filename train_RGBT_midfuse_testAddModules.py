@@ -3,7 +3,7 @@ warnings.filterwarnings('ignore')
 from ultralytics import YOLO
 
 if __name__ == '__main__':
-    model = YOLO('ultralytics/cfg/models/26-RGBT/yolo26-RGBT-midfusion-BlazeBlock-V1.yaml').load('weights/yolo26n.pt')
+    model = YOLO('ultralytics/cfg/models/26-RGBT/yolo26-RGBT-midfusion-GCBlock.yaml').load('weights/yolo26s.pt')
     # model.info(True,True)
     # model.load('yolov8n.pt') # loading pretrain weights
     model.train(data=R'ultralytics/cfg/datasets/LLVIP_zjy.yaml',
@@ -22,6 +22,6 @@ if __name__ == '__main__':
                 # pairs_rgb_ir=['visible','infrared'] , # default: ['visible','infrared'] , others: ['rgb', 'ir'],  ['images', 'images_ir'], ['images', 'image']
                 use_simotm="RGBT",
                 channels=4,
-                project=r'C:\Users\Patrick\Desktop\DeepLearning\Code\YOLOv11to26-RGBT\runs\LLVIP\26dual-test',
-                name='yolo26n-BlazeBlock-V1-RGBT-midfusion',
+                project=r'C:\Users\Patrick\Desktop\DeepLearning\Code\YOLOv11to26-RGBT\runs\FLIR\26dual-test',
+                name='yolo26s-RGBT-midfusion-GCBlock',
                 )
