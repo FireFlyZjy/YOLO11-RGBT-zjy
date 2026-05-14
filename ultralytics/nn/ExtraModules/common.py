@@ -357,3 +357,419 @@ class CSP_ATT(nn.Module):
 
 # -------------------------------------------------- SEAttention end------------------------------------------------------
 
+# ============================================================================
+# 2026-05-13 新增注意力模块（11个）
+# 所有模块均为 YOLO 兼容包装器，接受 (c1, c2) 作为前两个参数
+# 若 c1 != c2 则自动用 1×1 卷积对齐通道
+# 使用方式: [-1, 1, Att_XXX, [c2, ...其他参数]]
+# ============================================================================
+# -------------------------------------------------- CBAM start (2026-05-13) ------------------------------------------------------
+class ChannelAttention(nn.Module):
+    def __init__(self, channel, reduction=16):
+        super().__init__()
+        self.maxpool = nn.AdaptiveMaxPool2d(1)
+        self.avgpool = nn.AdaptiveAvgPool2d(1)
+        self.se = nn.Sequential(
+            nn.Conv2d(channel, channel // reduction, 1, bias=False),
+            nn.ReLU(),
+            nn.Conv2d(channel // reduction, channel, 1, bias=False),
+        )
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        max_out = self.se(self.maxpool(x))
+        avg_out = self.se(self.avgpool(x))
+        return self.sigmoid(max_out + avg_out)
+
+
+class SpatialAttention(nn.Module):
+    def __init__(self, kernel_size=7):
+        super().__init__()
+        self.conv = nn.Conv2d(2, 1, kernel_size=kernel_size, padding=kernel_size // 2)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        max_result, _ = torch.max(x, dim=1, keepdim=True)
+        avg_result = torch.mean(x, dim=1, keepdim=True)
+        result = torch.cat([max_result, avg_result], 1)
+        return self.sigmoid(self.conv(result))
+
+
+class Att_CBAM(nn.Module):
+    """CBAM: Convolutional Block Attention Module (通道+空间注意力)
+    论文: https://openaccess.thecvf.com/content_ECCV_2018/papers/Sanghyun_Woo_Convolutional_Block_Attention_ECCV_2018_paper.pdf
+    用法: [-1, 1, Att_CBAM, [c2, reduction, kernel_size]]
+    """
+    def __init__(self, c1, c2, reduction=16, kernel_size=7):
+        super().__init__()
+        self.conv = nn.Conv2d(c1, c2, 1, 1, 0, bias=False) if c1 != c2 else nn.Identity()
+        self.ca = ChannelAttention(channel=c2, reduction=reduction)
+        self.sa = SpatialAttention(kernel_size=kernel_size)
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = x * self.ca(x)
+        x = x * self.sa(x)
+        return x
+# -------------------------------------------------- CBAM end (2026-05-13) ------------------------------------------------------
+
+# -------------------------------------------------- CoordAttention start (2026-05-13) ------------------------------------------------------
+class Att_Coord(nn.Module):
+    """Coordinate Attention (坐标注意力)
+    论文: https://arxiv.org/abs/2103.02907
+    用法: [-1, 1, Att_Coord, [c2, reduction]]
+    """
+    def __init__(self, c1, c2, reduction=32):
+        super().__init__()
+        self.conv = nn.Conv2d(c1, c2, 1, 1, 0, bias=False) if c1 != c2 else nn.Identity()
+        self.pool_h = nn.AdaptiveAvgPool2d((None, 1))
+        self.pool_w = nn.AdaptiveAvgPool2d((1, None))
+        mip = max(8, c2 // reduction)
+        self.conv1 = nn.Conv2d(c2, mip, 1, 1, 0)
+        self.bn1 = nn.BatchNorm2d(mip)
+        self.act = nn.ReLU6(inplace=True)
+        self.conv_h = nn.Conv2d(mip, c2, 1, 1, 0)
+        self.conv_w = nn.Conv2d(mip, c2, 1, 1, 0)
+
+    def forward(self, x):
+        identity = self.conv(x)
+        n, c, h, w = identity.size()
+        x_h = self.pool_h(identity)
+        x_w = self.pool_w(identity).permute(0, 1, 3, 2)
+        y = torch.cat([x_h, x_w], dim=2)
+        y = self.act(self.bn1(self.conv1(y)))
+        x_h, x_w = torch.split(y, [h, w], dim=2)
+        x_w = x_w.permute(0, 1, 3, 2)
+        return identity * self.conv_h(x_h).sigmoid() * self.conv_w(x_w).sigmoid()
+# -------------------------------------------------- CoordAttention end (2026-05-13) ------------------------------------------------------
+
+# -------------------------------------------------- SimAM start (2026-05-13) ------------------------------------------------------
+class Att_SimAM(nn.Module):
+    """SimAM: Simple Parameter-Free Attention Module (无参数3D注意力)
+    论文: http://proceedings.mlr.press/v139/yang21o/yang21o.pdf
+    用法: [-1, 1, Att_SimAM, [c2, e_lambda]]
+    """
+    def __init__(self, c1, c2, e_lambda=1e-4):
+        super().__init__()
+        self.conv = nn.Conv2d(c1, c2, 1, 1, 0, bias=False) if c1 != c2 else nn.Identity()
+        self.activation = nn.Sigmoid()
+        self.e_lambda = e_lambda
+
+    def forward(self, x):
+        x = self.conv(x)
+        b, c, h, w = x.size()
+        n = w * h - 1
+        x_minus_mu_square = (x - x.mean(dim=[2, 3], keepdim=True)).pow(2)
+        y = x_minus_mu_square / (4 * (x_minus_mu_square.sum(dim=[2, 3], keepdim=True) / n + self.e_lambda)) + 0.5
+        return x * self.activation(y)
+# -------------------------------------------------- SimAM end (2026-05-13) ------------------------------------------------------
+
+# -------------------------------------------------- CPCA start (2026-05-13) ------------------------------------------------------
+class Att_CPCA(nn.Module):
+    """CPCA: Channel Prior Convolutional Attention (通道先验+多尺度条带空间注意力)
+    论文: https://arxiv.org/abs/2306.05196
+    用法: [-1, 1, Att_CPCA, [c2, reduction]]
+    """
+    def __init__(self, c1, c2, reduction=4):
+        super().__init__()
+        self.conv_in = nn.Conv2d(c1, c2, 1, 1, 0, bias=False) if c1 != c2 else nn.Identity()
+        channels = c2
+        internal_neurons = max(1, channels // reduction)
+        self.fc1 = nn.Conv2d(channels, internal_neurons, 1, 1, 0, bias=True)
+        self.fc2 = nn.Conv2d(internal_neurons, channels, 1, 1, 0, bias=True)
+        self.dconv5_5 = nn.Conv2d(channels, channels, 5, 1, 2, groups=channels)
+        self.dconv1_7 = nn.Conv2d(channels, channels, (1, 7), 1, (0, 3), groups=channels)
+        self.dconv7_1 = nn.Conv2d(channels, channels, (7, 1), 1, (3, 0), groups=channels)
+        self.dconv1_11 = nn.Conv2d(channels, channels, (1, 11), 1, (0, 5), groups=channels)
+        self.dconv11_1 = nn.Conv2d(channels, channels, (11, 1), 1, (5, 0), groups=channels)
+        self.dconv1_21 = nn.Conv2d(channels, channels, (1, 21), 1, (0, 10), groups=channels)
+        self.dconv21_1 = nn.Conv2d(channels, channels, (21, 1), 1, (10, 0), groups=channels)
+        self.conv_out = nn.Conv2d(channels, channels, 1, 1, 0)
+        self.act = nn.GELU()
+
+    def forward(self, inputs):
+        inputs = self.conv_in(inputs)
+        inputs = self.act(self.conv_out(inputs))
+        # Channel attention
+        x1 = torch.nn.functional.adaptive_avg_pool2d(inputs, (1, 1))
+        x1 = self.fc1(x1)
+        x1 = torch.relu(x1)
+        x1 = self.fc2(x1)
+        x2 = torch.nn.functional.adaptive_max_pool2d(inputs, (1, 1))
+        x2 = self.fc1(x2)
+        x2 = torch.relu(x2)
+        x2 = self.fc2(x2)
+        inputs = inputs * torch.sigmoid(x1 + x2)
+        # Multi-scale spatial attention
+        x_init = self.dconv5_5(inputs)
+        x_1 = self.dconv1_7(x_init)
+        x_1 = self.dconv7_1(x_1)
+        x_2 = self.dconv1_11(x_init)
+        x_2 = self.dconv11_1(x_2)
+        x_3 = self.dconv1_21(x_init)
+        x_3 = self.dconv21_1(x_3)
+        x = x_1 + x_2 + x_3 + x_init
+        spatial_att = self.conv_out(x)
+        out = spatial_att * inputs
+        return self.conv_out(out)
+# -------------------------------------------------- CPCA end (2026-05-13) ------------------------------------------------------
+
+# -------------------------------------------------- EMA start (2026-05-13) ------------------------------------------------------
+class Att_EMA(nn.Module):
+    """EMA: Efficient Multi-Scale Attention (高效多尺度注意力)
+    论文: https://arxiv.org/abs/2305.13563v2
+    用法: [-1, 1, Att_EMA, [c2, factor]]
+    """
+    def __init__(self, c1, c2, factor=8):
+        super().__init__()
+        self.conv = nn.Conv2d(c1, c2, 1, 1, 0, bias=False) if c1 != c2 else nn.Identity()
+        self.groups = factor
+        self.softmax = nn.Softmax(-1)
+        self.agp = nn.AdaptiveAvgPool2d((1, 1))
+        self.pool_h = nn.AdaptiveAvgPool2d((None, 1))
+        self.pool_w = nn.AdaptiveAvgPool2d((1, None))
+        c_per_group = c2 // self.groups
+        self.gn = nn.GroupNorm(c_per_group, c_per_group)
+        self.conv1x1 = nn.Conv2d(c_per_group, c_per_group, 1, 1, 0)
+        self.conv3x3 = nn.Conv2d(c_per_group, c_per_group, 3, 1, 1)
+
+    def forward(self, x):
+        x = self.conv(x)
+        b, c, h, w = x.size()
+        group_x = x.reshape(b * self.groups, -1, h, w)
+        x_h = self.pool_h(group_x)
+        x_w = self.pool_w(group_x).permute(0, 1, 3, 2)
+        hw = self.conv1x1(torch.cat([x_h, x_w], dim=2))
+        x_h, x_w = torch.split(hw, [h, w], dim=2)
+        x1 = self.gn(group_x * x_h.sigmoid() * x_w.permute(0, 1, 3, 2).sigmoid())
+        x2 = self.conv3x3(group_x)
+        c_per_group = c // self.groups
+        x11 = self.softmax(self.agp(x1).reshape(b * self.groups, -1, 1).permute(0, 2, 1))
+        x12 = x2.reshape(b * self.groups, c_per_group, -1)
+        x21 = self.softmax(self.agp(x2).reshape(b * self.groups, -1, 1).permute(0, 2, 1))
+        x22 = x1.reshape(b * self.groups, c_per_group, -1)
+        weights = (torch.matmul(x11, x12) + torch.matmul(x21, x22)).reshape(b * self.groups, 1, h, w)
+        return (group_x * weights.sigmoid()).reshape(b, c, h, w)
+# -------------------------------------------------- EMA end (2026-05-13) ------------------------------------------------------
+
+# -------------------------------------------------- ECA start (2026-05-13) ------------------------------------------------------
+class Att_ECA(nn.Module):
+    """ECA: Efficient Channel Attention (高效通道注意力)
+    论文: https://arxiv.org/pdf/1910.03151.pdf
+    用法: [-1, 1, Att_ECA, [c2]]
+    """
+    def __init__(self, c1, c2):
+        super().__init__()
+        self.conv = nn.Conv2d(c1, c2, 1, 1, 0, bias=False) if c1 != c2 else nn.Identity()
+        t = int(abs((math.log(c2, 2) + 1) / 2))
+        k = t if t % 2 else t + 1
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.conv1d = nn.Conv1d(1, 1, kernel_size=k, padding=k // 2, bias=False)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        x = self.conv(x)
+        y = self.avg_pool(x)
+        y = self.conv1d(y.squeeze(-1).transpose(-1, -2)).transpose(-1, -2).unsqueeze(-1)
+        return x * self.sigmoid(y)
+# -------------------------------------------------- ECA end (2026-05-13) ------------------------------------------------------
+
+# -------------------------------------------------- ShuffleAttention start (2026-05-13) ------------------------------------------------------
+class Att_Shuffle(nn.Module):
+    """Shuffle Attention (分组通道+空间注意力+通道混洗)
+    论文: https://arxiv.org/pdf/2102.00240.pdf
+    用法: [-1, 1, Att_Shuffle, [c2, G]]
+    """
+    def __init__(self, c1, c2, G=8):
+        super().__init__()
+        self.conv = nn.Conv2d(c1, c2, 1, 1, 0, bias=False) if c1 != c2 else nn.Identity()
+        self.G = G
+        half_c = c2 // (2 * G)
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.gn = nn.GroupNorm(half_c, half_c)
+        self.cweight = nn.Parameter(torch.zeros(1, half_c, 1, 1))
+        self.cbias = nn.Parameter(torch.ones(1, half_c, 1, 1))
+        self.sweight = nn.Parameter(torch.zeros(1, half_c, 1, 1))
+        self.sbias = nn.Parameter(torch.ones(1, half_c, 1, 1))
+        self.sigmoid = nn.Sigmoid()
+
+    @staticmethod
+    def channel_shuffle(x, groups):
+        b, c, h, w = x.shape
+        x = x.reshape(b, groups, -1, h, w)
+        x = x.permute(0, 2, 1, 3, 4)
+        return x.reshape(b, -1, h, w)
+
+    def forward(self, x):
+        x = self.conv(x)
+        b, c, h, w = x.size()
+        x = x.view(b * self.G, -1, h, w)
+        x_0, x_1 = x.chunk(2, dim=1)
+        x_channel = self.avg_pool(x_0)
+        x_channel = self.cweight * x_channel + self.cbias
+        x_channel = x_0 * self.sigmoid(x_channel)
+        x_spatial = self.gn(x_1)
+        x_spatial = self.sweight * x_spatial + self.sbias
+        x_spatial = x_1 * self.sigmoid(x_spatial)
+        out = torch.cat([x_channel, x_spatial], dim=1)
+        out = out.contiguous().view(b, -1, h, w)
+        return self.channel_shuffle(out, 2)
+# -------------------------------------------------- ShuffleAttention end (2026-05-13) ------------------------------------------------------
+
+# -------------------------------------------------- LSKA start (2026-05-13) ------------------------------------------------------
+class Att_LSKA(nn.Module):
+    """LSKA: Large Separable Kernel Attention (大核可分离空间注意力)
+    论文: https://arxiv.org/abs/2309.01439
+    用法: [-1, 1, Att_LSKA, [c2, k_size]]
+    """
+    def __init__(self, c1, c2, k_size=7):
+        super().__init__()
+        self.conv = nn.Conv2d(c1, c2, 1, 1, 0, bias=False) if c1 != c2 else nn.Identity()
+
+        if k_size == 7:
+            self.conv0h = nn.Conv2d(c2, c2, (1, 3), (1, 1), (0, 1), groups=c2)
+            self.conv0v = nn.Conv2d(c2, c2, (3, 1), (1, 1), (1, 0), groups=c2)
+            self.conv_spatial_h = nn.Conv2d(c2, c2, (1, 3), (1, 1), (0, 2), groups=c2, dilation=2)
+            self.conv_spatial_v = nn.Conv2d(c2, c2, (3, 1), (1, 1), (2, 0), groups=c2, dilation=2)
+        elif k_size == 11:
+            self.conv0h = nn.Conv2d(c2, c2, (1, 3), (1, 1), (0, 1), groups=c2)
+            self.conv0v = nn.Conv2d(c2, c2, (3, 1), (1, 1), (1, 0), groups=c2)
+            self.conv_spatial_h = nn.Conv2d(c2, c2, (1, 5), (1, 1), (0, 4), groups=c2, dilation=2)
+            self.conv_spatial_v = nn.Conv2d(c2, c2, (5, 1), (1, 1), (4, 0), groups=c2, dilation=2)
+        elif k_size == 23:
+            self.conv0h = nn.Conv2d(c2, c2, (1, 5), (1, 1), (0, 2), groups=c2)
+            self.conv0v = nn.Conv2d(c2, c2, (5, 1), (1, 1), (2, 0), groups=c2)
+            self.conv_spatial_h = nn.Conv2d(c2, c2, (1, 7), (1, 1), (0, 9), groups=c2, dilation=3)
+            self.conv_spatial_v = nn.Conv2d(c2, c2, (7, 1), (1, 1), (9, 0), groups=c2, dilation=3)
+        elif k_size == 35:
+            self.conv0h = nn.Conv2d(c2, c2, (1, 5), (1, 1), (0, 2), groups=c2)
+            self.conv0v = nn.Conv2d(c2, c2, (5, 1), (1, 1), (2, 0), groups=c2)
+            self.conv_spatial_h = nn.Conv2d(c2, c2, (1, 11), (1, 1), (0, 15), groups=c2, dilation=3)
+            self.conv_spatial_v = nn.Conv2d(c2, c2, (11, 1), (1, 1), (15, 0), groups=c2, dilation=3)
+        elif k_size == 53:
+            self.conv0h = nn.Conv2d(c2, c2, (1, 5), (1, 1), (0, 2), groups=c2)
+            self.conv0v = nn.Conv2d(c2, c2, (5, 1), (1, 1), (2, 0), groups=c2)
+            self.conv_spatial_h = nn.Conv2d(c2, c2, (1, 17), (1, 1), (0, 24), groups=c2, dilation=3)
+            self.conv_spatial_v = nn.Conv2d(c2, c2, (17, 1), (1, 1), (24, 0), groups=c2, dilation=3)
+        else:  # fallback to k_size=7
+            self.conv0h = nn.Conv2d(c2, c2, (1, 3), (1, 1), (0, 1), groups=c2)
+            self.conv0v = nn.Conv2d(c2, c2, (3, 1), (1, 1), (1, 0), groups=c2)
+            self.conv_spatial_h = nn.Conv2d(c2, c2, (1, 3), (1, 1), (0, 2), groups=c2, dilation=2)
+            self.conv_spatial_v = nn.Conv2d(c2, c2, (3, 1), (1, 1), (2, 0), groups=c2, dilation=2)
+
+        self.conv1 = nn.Conv2d(c2, c2, 1)
+
+    def forward(self, x):
+        u = self.conv(x)
+        attn = self.conv0h(u)
+        attn = self.conv0v(attn)
+        attn = self.conv_spatial_h(attn)
+        attn = self.conv_spatial_v(attn)
+        attn = self.conv1(attn)
+        return u * attn
+# -------------------------------------------------- LSKA end (2026-05-13) ------------------------------------------------------
+
+# -------------------------------------------------- TripletAttention start (2026-05-13) ------------------------------------------------------
+class Att_Triplet(nn.Module):
+    """Triplet Attention (三元组跨维度注意力)
+    论文: https://arxiv.org/abs/2010.03045
+    用法: [-1, 1, Att_Triplet, [c2]]
+    """
+    def __init__(self, c1, c2):
+        super().__init__()
+        self.conv = nn.Conv2d(c1, c2, 1, 1, 0, bias=False) if c1 != c2 else nn.Identity()
+
+        def make_gate():
+            return nn.Sequential(
+                nn.Conv2d(2, 1, 7, 1, 3, bias=False),
+                nn.Sigmoid(),
+            )
+
+        self.gate_hw = make_gate()  # (H, W) 空间注意力
+        self.gate_cw = make_gate()  # (C, W) 通道-宽度
+        self.gate_hc = make_gate()  # (H, C) 高度-通道
+
+    def forward(self, x):
+        x = self.conv(x)
+
+        # (H, W) branch
+        hw_pool = torch.cat([x.max(1, keepdim=True)[0], x.mean(1, keepdim=True)], dim=1)
+        hw_out = x * self.gate_hw(hw_pool)
+
+        # (C, W) branch
+        x_perm1 = x.permute(0, 2, 1, 3).contiguous()
+        cw_pool = torch.cat([x_perm1.max(1, keepdim=True)[0], x_perm1.mean(1, keepdim=True)], dim=1)
+        cw_out = x_perm1 * self.gate_cw(cw_pool)
+        cw_out = cw_out.permute(0, 2, 1, 3).contiguous()
+
+        # (H, C) branch
+        x_perm2 = x.permute(0, 3, 2, 1).contiguous()
+        hc_pool = torch.cat([x_perm2.max(1, keepdim=True)[0], x_perm2.mean(1, keepdim=True)], dim=1)
+        hc_out = x_perm2 * self.gate_hc(hc_pool)
+        hc_out = hc_out.permute(0, 3, 2, 1).contiguous()
+
+        return (hw_out + cw_out + hc_out) / 3
+# -------------------------------------------------- TripletAttention end (2026-05-13) ------------------------------------------------------
+
+# -------------------------------------------------- GAM start (2026-05-13) ------------------------------------------------------
+class Att_GAM(nn.Module):
+    """GAM: Global Attention Mechanism (全局注意力机制)
+    论文: https://arxiv.org/pdf/2112.05561v1.pdf
+    用法: [-1, 1, Att_GAM, [c2, rate]]
+    """
+    def __init__(self, c1, c2, rate=4):
+        super().__init__()
+        self.conv = nn.Conv2d(c1, c2, 1, 1, 0, bias=False) if c1 != c2 else nn.Identity()
+
+        self.channel_attention = nn.Sequential(
+            nn.Linear(c2, max(1, c2 // rate)),
+            nn.ReLU(inplace=True),
+            nn.Linear(max(1, c2 // rate), c2),
+        )
+
+        self.spatial_attention = nn.Sequential(
+            nn.Conv2d(c2, max(1, c2 // rate), 7, 1, 3),
+            nn.BatchNorm2d(max(1, c2 // rate)),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(max(1, c2 // rate), c2, 7, 1, 3),
+            nn.BatchNorm2d(c2),
+        )
+
+    def forward(self, x):
+        x = self.conv(x)
+        b, c, h, w = x.shape
+        # Channel attention
+        x_permute = x.permute(0, 2, 3, 1).contiguous().view(b, -1, c)
+        x_channel_att = self.channel_attention(x_permute).view(b, h, w, c)
+        x_channel_att = x_channel_att.permute(0, 3, 1, 2).contiguous().sigmoid()
+        x = x * x_channel_att
+        # Spatial attention
+        x_spatial_att = self.spatial_attention(x).sigmoid()
+        return x * x_spatial_att
+# -------------------------------------------------- GAM end (2026-05-13) ------------------------------------------------------
+
+# -------------------------------------------------- ELA start (2026-05-13) ------------------------------------------------------
+class Att_ELA(nn.Module):
+    """ELA: Efficient Local Attention (高效局部注意力)
+    论文: https://arxiv.org/abs/2403.01123
+    用法: [-1, 1, Att_ELA, [c2]]
+    """
+    def __init__(self, c1, c2):
+        super().__init__()
+        self.conv = nn.Conv2d(c1, c2, 1, 1, 0, bias=False) if c1 != c2 else nn.Identity()
+        self.pool_h = nn.AdaptiveAvgPool2d((None, 1))
+        self.pool_w = nn.AdaptiveAvgPool2d((1, None))
+        gn_groups = min(16, c2)
+        self.conv1x1 = nn.Sequential(
+            nn.Conv1d(c2, c2, 1),
+            nn.GroupNorm(gn_groups, c2),
+            nn.Sigmoid(),
+        )
+
+    def forward(self, x):
+        x = self.conv(x)
+        b, c, h, w = x.size()
+        x_h = self.conv1x1(self.pool_h(x).reshape(b, c, h)).reshape(b, c, h, 1)
+        x_w = self.conv1x1(self.pool_w(x).reshape(b, c, w)).reshape(b, c, 1, w)
+        return x * x_h * x_w
+# -------------------------------------------------- ELA end (2026-05-13) ------------------------------------------------------

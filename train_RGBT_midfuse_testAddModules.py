@@ -3,10 +3,10 @@ warnings.filterwarnings('ignore')
 from ultralytics import YOLO
 
 if __name__ == '__main__':
-    model = YOLO('ultralytics/cfg/models/26-RGBT/yolo26-RGBT-midfusion-GCBlock.yaml').load('weights/yolo26s.pt')
+    model = YOLO('ultralytics/cfg/models/26-RGBT/2026-05-13/yolo26-RGBT-midfusion-Att_CBAM.yaml').load('weights/yolo26s.pt')
     # model.info(True,True)
     # model.load('yolov8n.pt') # loading pretrain weights
-    model.train(data=R'ultralytics/cfg/datasets/LLVIP_zjy.yaml',
+    model.train(data=R'ultralytics/cfg/datasets/flir.yaml',
                 cache=False,
                 imgsz=640,
                 epochs=100,
@@ -23,5 +23,5 @@ if __name__ == '__main__':
                 use_simotm="RGBT",
                 channels=4,
                 project=r'C:\Users\Patrick\Desktop\DeepLearning\Code\YOLOv11to26-RGBT\runs\FLIR\26dual-test',
-                name='yolo26s-RGBT-midfusion-GCBlock',
+                name='yolo26s-RGBT-midfusion-Att_CBAM',
                 )

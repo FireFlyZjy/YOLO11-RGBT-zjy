@@ -1040,7 +1040,21 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             ASPP_Branch,
             Conv_Blaze, # 适合移动端和边缘计算设备
             GCBlock, # 进行跨通道的特征重标定
-
+            # ================================================================
+            # 2026-05-13 新增注意力模块（11个）
+            # 插入位置：双模态Concat融合之后(P3/P4/P5)，对融合特征做跨通道/空间重标定
+            # ================================================================
+            Att_CBAM,    # CBAM: 通道注意力(MLP双池化)+空间注意力(7×7卷积)，串行抑制背景噪声
+            Att_Coord,   # Coordinate Attention: H/W双向1D池化保留空间坐标，IR热点定位友好
+            Att_SimAM,   # SimAM: 基于神经科学能量函数的无参数3D注意力，零额外参数
+            Att_CPCA,    # CPCA: 通道先验+多尺度条带深度卷积(1×7/1×11/1×21)，适配YOLO多尺度
+            Att_EMA,     # EMA: 分组双支路(1D编码+3×3卷积)+softmax交叉融合，高效现代
+            Att_ECA,     # ECA-Net: 自适应核大小Conv1d通道交互，几乎零参数开销
+            Att_Shuffle, # ShuffleAttention: 分组内半通道注意力半空间注意力+channel shuffle通信
+            Att_LSKA,    # LSKA: 53×53→级联1D深度卷积等效大感受野，小IR目标检测
+            Att_Triplet, # Triplet Attention: (H,W)/(C,H)/(C,W)三维度旋转空间注意力，跨模态交互
+            Att_GAM,     # GAM: 逐位置FC通道注意力+7×7卷积空间注意力，CBAM增强版
+            Att_ELA,     # ELA: H/W双向1D卷积+GroupNorm方向局部注意力，2024新作
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments

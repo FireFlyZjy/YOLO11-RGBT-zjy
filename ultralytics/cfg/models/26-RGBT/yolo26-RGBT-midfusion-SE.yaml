@@ -46,7 +46,7 @@ backbone:
   - [[8, 18], 1, Concat, [1]]  # cat backbone P4   22
   - [[10, 20], 1, Concat, [1]]  # cat backbone P5   23
 
-  - [ -1, 1, CSP_ATT, [ 1024, [[5, 9, 13]] ] ] # 24 替换原来的 SPPF(注意 k 参数要打包成列表)
+  - [ -1, 1, CSP_ATT, [ 1024, [5, 9, 13] ] ] # 24 替换原来的 SPPF(注意 k 参数要打包成列表)
   - [ -1, 2, C2PSA, [ 1024 ] ] # 25
 
 # YOLO11n head

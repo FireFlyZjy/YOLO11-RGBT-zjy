@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/d/Anaconda/envs/torch310/python.exe -c ' *)"
+    ]
+  }
+}
