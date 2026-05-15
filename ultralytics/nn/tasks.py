@@ -13,7 +13,7 @@ from timm.models.focalnet import FocalModulation
 
 
 from ultralytics.nn.ExtraModules import *
-from ultralytics.nn.ExtraModules.SE import *
+from ultralytics.nn.ExtraModules.attention.SE import *
 from ultralytics.nn.ExtraModules.common import *
 
 from ultralytics.nn.modules import (
@@ -1055,6 +1055,18 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             Att_Triplet, # Triplet Attention: (H,W)/(C,H)/(C,W)三维度旋转空间注意力，跨模态交互
             Att_GAM,     # GAM: 逐位置FC通道注意力+7×7卷积空间注意力，CBAM增强版
             Att_ELA,     # ELA: H/W双向1D卷积+GroupNorm方向局部注意力，2024新作
+            # ================================================================
+            # 2026-05-14 新增模块 (来自 yolo-improve)
+            # ================================================================
+            Att_AIFI,    # AIFI: RT-DETR的Transformer自注意力+2D位置编码，P5全局上下文建模
+            Att_ScalSeq, # ScalSeq: ASF-YOLO的3D卷积多尺度融合，Conv3d+MaxPool3d跨尺度交互
+            # ================================================================
+            # 2026-05-14 新增模块 (来自 Plug-and-play module)
+            # ================================================================
+            Att_AFF,     # AFF: 注意力特征融合,局部+全局注意力学习双输入逐通道融合权重,替代Concat
+            Att_iAFF,    # iAFF: 迭代AFF,两次局部+全局注意力精炼融合权重
+            Att_ULSAM,   # ULSAM: 超轻量子空间注意力,分组通道独立空间softmax注意力
+            Att_StripPool, # StripPooling: 1D条带池化长程空间上下文,对细长目标友好
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments
@@ -1093,7 +1105,11 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 with contextlib.suppress(ValueError):
                     args[j] = locals()[a] if a in locals() else ast.literal_eval(a)
         n = n_ = max(round(n * depth), 1) if n > 1 else n  # depth gain
-        if m in base_modules :
+        if m in (Att_ScalSeq, Att_AFF, Att_iAFF):  # 2026-05-14: 多输入模块(from为列表), 在base_modules之前处理
+            c1 = [ch[x] for x in f]
+            c2 = args[0]
+            args = [c1, c2, *args[1:]]
+        elif m in base_modules :
             c1, c2 = ch[f], args[0]
             # print(m,args)
             if c2 != nc:  # if c2 not equal to number of classes (i.e. for Classify() output)

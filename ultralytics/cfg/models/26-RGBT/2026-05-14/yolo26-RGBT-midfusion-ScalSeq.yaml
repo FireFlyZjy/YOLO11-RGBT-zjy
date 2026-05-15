@@ -1,0 +1,69 @@
+# Ultralytics YOLO11 RGBT midfusion with ScalSeq (3D Convolution Multi-Scale Fusion)
+# 基于模板: yolo26-RGBT-midfusion.yaml
+# 修改日期: 2026-05-14
+# 来源: ASF-YOLO https://arxiv.org/abs/2312.06458
+#
+# 【与基线模板的差异】
+# + 新增: ScalSeq 取 backbone P3/P4/P5 Concat 输出做 Conv3d 跨尺度融合
+# + 新增: 用 ScalSeq 输出替换原 Neck P3 路径
+# ~ Head修改: Detect 输入层引用调整
+#
+# Parameters
+nc: 3
+scales:
+  s: [0.50, 0.50, 1024]
+
+ch: 4
+backbone:
+  - [-1, 1, Silence, []]
+    # visible
+  - [0, 1, SilenceChannel, [0,3]]
+  - [-1, 1, Conv, [64, 3, 2]]
+  - [-1, 1, Conv, [128, 3, 2]]
+  - [-1, 2, C3k2, [256, False, 0.25]]
+  - [-1, 1, Conv, [256, 3, 2]]
+  - [-1, 2, C3k2, [512, False, 0.25]]
+  - [-1, 1, Conv, [512, 3, 2]]
+  - [-1, 2, C3k2, [512, True]]
+  - [-1, 1, Conv, [1024, 3, 2]]
+  - [-1, 2, C3k2, [1024, True, 0.5, True]]
+
+    # infrared
+  - [0, 1, SilenceChannel, [3,4]]
+  - [-1, 1, Conv, [64, 3, 2]]
+  - [-1, 1, Conv, [128, 3, 2]]
+  - [-1, 2, C3k2, [256, False, 0.25]]
+  - [-1, 1, Conv, [256, 3, 2]]
+  - [-1, 2, C3k2, [512, False, 0.25]]
+  - [-1, 1, Conv, [512, 3, 2]]
+  - [-1, 2, C3k2, [512, True]]
+  - [-1, 1, Conv, [1024, 3, 2]]
+  - [-1, 2, C3k2, [1024, True, 0.5, True]]
+  - [[6, 16], 1, Concat, [1]]  # 21-P3
+  - [[8, 18], 1, Concat, [1]]  # 22-P4
+  - [[10, 20], 1, Concat, [1]] # 23-P5
+
+  - [-1, 1, SPPF, [1024, 5, 3, True]] # 24
+  - [-1, 2, C2PSA, [1024]] # 25
+
+# YOLO11 head (P4/P5 保留原FPN路径, P3 由ScalSeq替代)
+head:
+  # ---- P5 -> P4 FPN 路径 ----
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]  # 26
+  - [[-1, 22], 1, Concat, [1]]                   # 27  cat P4 Concat
+  - [-1, 2, C3k2, [512, False]]                   # 28  P4 head
+
+  # ---- ScalSeq 3D跨尺度融合 (替代原P3 FPN路径) ----
+  - [[21, 22, 23], 1, Att_ScalSeq, [256]]         # 29 ← 新增: Conv3d融合P3/P4/P5
+  - [-1, 1, Conv, [256, 3, 2]]                    # 30 ← 下采样到P4尺度
+
+  # ---- P4 -> P5 FPN 路径 ----
+  - [[-1, 28], 1, Concat, [1]]                    # 31 ← cat ScalSeq下采样 + P4 head
+  - [-1, 2, C3k2, [512, False]]                   # 32
+
+  - [-1, 1, Conv, [512, 3, 2]]                    # 33
+  - [[-1, 25], 1, Concat, [1]]                    # 34  cat C2PSA
+  - [-1, 2, C3k2, [1024, True, 0.5, True]]        # 35  P5 large
+
+  # Detect: P3=ScalSeq(29), P4=Concat(32), P5=C3k2(35)
+  - [[29, 32, 35], 1, Detect, [nc]]               # 36
