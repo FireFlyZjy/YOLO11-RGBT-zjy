@@ -49,17 +49,17 @@ DEFAULT_CHANNELS = 4                                     # 当前使用: 4
 
 # --- 训练结果保存 ---
 DEFAULT_PROJECT = "runs/FLIR/26dual-test"
-DEFAULT_NAME = "yolo26s-RGBT-midfusion-Att_Coord"
+DEFAULT_NAME = "yolo26s-RGBT-midfusion-Att_Coord2"
 
 # --- 恢复训练 ---
-# DEFAULT_RESUME = ''                                    # last.pt 路径 (已被注释)
+DEFAULT_RESUME = "runs/FLIR/26dual-test/yolo26s-RGBT-midfusion-Att_Coord/weights/last.pt"                                      # last.pt 路径，留空则不启用续训
 
 # --- 验证参数 (训练后自动验证) ---
 # 验证时使用训练后的 best.pt
 
 # --- CSV 输出 ---
-DEFAULT_CSV_DIR = r"C:\Users\Patrick\Desktop\exp_results"
-DEFAULT_CSV_NAME = "train_results.csv"
+DEFAULT_CSV_DIR = "runs/FLIR"
+DEFAULT_CSV_NAME = "FLIR_train_results.csv"
 
 # ============================================================================
 
@@ -91,11 +91,16 @@ def main():
     # 保存
     parser.add_argument("--project", type=str, default=DEFAULT_PROJECT)
     parser.add_argument("--name", type=str, default=DEFAULT_NAME)
+    # 恢复训练
+    parser.add_argument("--resume", type=str, default=DEFAULT_RESUME,
+                        help="续训 checkpoint 路径 (e.g. runs/.../weights/last.pt)，留空则从头训练")
     # CSV
     parser.add_argument("--csv_dir", type=str, default=DEFAULT_CSV_DIR)
     parser.add_argument("--csv_name", type=str, default=DEFAULT_CSV_NAME)
 
     args = parser.parse_args()
+
+    resume_mode = bool(args.resume)
 
     # ---- 提取模型名称 (从 YAML 文件名) ----
     yaml_stem = Path(args.model_yaml).stem
@@ -109,20 +114,33 @@ def main():
 
     print(f"Model YAML:  {args.model_yaml}")
     print(f"Model Short: {model_short}")
-    print(f"Pretrained:  {args.pretrained}")
+    if resume_mode:
+        print(f"Resume from: {args.resume}")
+    else:
+        print(f"Pretrained:  {args.pretrained}")
 
     # ---- 步骤1: 加载模型 ----
     print("\n[Step 1/4] Loading model...")
-    model = YOLO(args.model_yaml).load(args.pretrained)
 
-    # ---- 获取 FLOPs 与 Params (训练前) ----
+    if resume_mode:
+        # 续训模式: 从 checkpoint 恢复
+        resume_path = args.resume
+        print(f"Resume checkpoint: {resume_path}")
+        model = YOLO(resume_path)
+    else:
+        # 从头训练模式: 加载 YAML + 预训练权重
+        model = YOLO(args.model_yaml).load(args.pretrained)
+
+    # ---- 获取 FLOPs 与 Params ----
     n_l, n_p, n_g, flops = model.info(verbose=True)
     params_m = n_p / 1e6
     flops_g = flops if flops else 0
 
     # ---- 步骤2: 训练 ----
-    print("\n[Step 2/4] Training...")
-    train_result = model.train(
+    print("\n[Step 2/4] Training..." + (" (resume)" if resume_mode else ""))
+
+    # 公共训练参数
+    common_train_args = dict(
         data=args.data,
         cache=args.cache,
         imgsz=args.imgsz,
@@ -131,12 +149,19 @@ def main():
         close_mosaic=args.close_mosaic,
         workers=args.workers,
         device=args.device,
-        optimizer=args.optimizer,
         use_simotm=args.use_simotm,
         channels=args.channels,
         project=args.project,
         name=args.name,
     )
+
+    if resume_mode:
+        # resume=True 从 checkpoint 恢复 optimizer / 学习率调度器等状态
+        common_train_args["resume"] = True
+    else:
+        common_train_args["optimizer"] = args.optimizer
+
+    train_result = model.train(**common_train_args)
 
     # ---- 步骤3: 验证训练好的模型 ----
     print("\n[Step 3/4] Validating trained model...")
@@ -251,7 +276,7 @@ def main():
             writer.writerow({
                 "Model": model_short,
                 "YAML": args.model_yaml,
-                "Pretrained": args.pretrained,
+                "Pretrained": args.resume if resume_mode else args.pretrained,
                 "Precision": f"{precision:.4f}",
                 "Recall": f"{recall:.4f}",
                 "mAP50": f"{map50:.4f}",

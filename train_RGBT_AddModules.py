@@ -13,7 +13,7 @@ from ultralytics import YOLO
 
 # --- 模型配置 ---
 # 模型 YAML 配置文件路径
-DEFAULT_MODEL_YAML = "ultralytics/cfg/models/26-RGBT/2026-05-13/yolo26-RGBT-midfusion-Att_Coord.yaml"
+DEFAULT_MODEL_YAML = "ultralytics/cfg/models/26-RGBT/2026-05-13/yolo26-RGBT-midfusion-Att_CBAM.yaml"
 # 预训练权重路径
 DEFAULT_PRETRAINED = "weights/yolo26s.pt"
 
@@ -48,8 +48,8 @@ DEFAULT_CHANNELS = 4                                     # 当前使用: 4
 # DEFAULT_PAIRS_RGB_IR = ['visible','infrared']           # (已被注释)
 
 # --- 训练结果保存 ---
-DEFAULT_PROJECT = "runs/FLIR/26dual-test"
-DEFAULT_NAME = "yolo26s-RGBT-midfusion-Att_Coord"
+DEFAULT_PROJECT = "runs/FLIR/26dual"
+DEFAULT_NAME = "yolo26s-RGBT-midfusion-Att_CBAM"
 
 # --- 恢复训练 ---
 # DEFAULT_RESUME = ''                                    # last.pt 路径 (已被注释)
