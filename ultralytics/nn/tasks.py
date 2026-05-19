@@ -1074,6 +1074,10 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             Att_CIFusion, # CIFusion: 跨模态交叉交换通道注意力融合, 双向信息传递
             Att_SFEM,    # SFEM: 空间-频率增强(C2f+FFT+Scharr), RGB分支专用
             Att_IRAFAB,  # IR_AFAB: 自适应多核深度卷积+门控线性单元, IR分支专用
+            # ================================================================
+            # 2026-05-19 新增模块 (来自 ICAFusion)
+            # ================================================================
+            Att_ICAFusion, # ICAFusion: 迭代交叉注意力Transformer融合, 跨模态特征交互
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments
@@ -1114,7 +1118,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 with contextlib.suppress(ValueError):
                     args[j] = locals()[a] if a in locals() else ast.literal_eval(a)
         n = n_ = max(round(n * depth), 1) if n > 1 else n  # depth gain
-        if m in (Att_ScalSeq, Att_AFF, Att_iAFF, Att_CIFusion):  # 多输入模块(from为列表), 在base_modules之前处理
+        if m in (Att_ScalSeq, Att_AFF, Att_iAFF, Att_CIFusion, Att_ICAFusion):  # 多输入模块(from为列表), 在base_modules之前处理
             c1 = [ch[x] for x in f]
             c2 = args[0]
             args = [c1, c2, *args[1:]]

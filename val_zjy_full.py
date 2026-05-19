@@ -1,6 +1,7 @@
 import argparse
 import csv
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from ultralytics import YOLO
@@ -10,21 +11,19 @@ from ultralytics import YOLO
 # 涵盖 val_zjy.py 中所有参数（包括被注释掉的备选值）
 # ============================================================================
 
-# --- 模型与数据集 ---
+# --- 模型权重 ---
 # 模型权重路径，支持目录（自动查找 last.pt/best.pt）或直接 .pt 文件路径
 # 示例: "runs/FLIR/26dual-test/yolo26n-RGBT-midfusion-ASPP-V1/weights"
 DEFAULT_WEIGHTS = "runs/FLIR/26dual-test/yolo26n-RGBT-midfusion-ASPP-V1/weights/best.pt"
 
-# 数据集配置文件
+# --- 结果保存 ---
+DEFAULT_PROJECT = "runs/FLIR/val"                        # 验证结果保存目录
+DEFAULT_NAME = "test"                             # 实验名称
+
+# --- 数据集 ---
 DEFAULT_DATA = "ultralytics/cfg/datasets/flir.yaml"
 
-# --- 验证参数 ---
-DEFAULT_WORKERS = 0                                      # 数据加载线程数
-DEFAULT_DEVICE = "0"                                     # CUDA 设备，'cpu' 表示 CPU
-DEFAULT_BATCH = 4                                        # 验证批次大小
-DEFAULT_IMGSZ = 640                                      # 输入图像尺寸
-
-# --- 预处理方法 (use_simotm) ---
+# --- 模态配置 ---
 # 可选值: "RGBT", "RGBRGB6C", "SimOTMBBS", "RGBT_IR", "RGBRGB", "Gray"
 DEFAULT_USE_SIMOTM = "RGBT"                              # 当前使用: RGBT
 # DEFAULT_USE_SIMOTM = "RGBRGB6C"                        # 备选: RGBRGB6C
@@ -33,12 +32,14 @@ DEFAULT_USE_SIMOTM = "RGBT"                              # 当前使用: RGBT
 DEFAULT_CHANNELS = 4                                     # 当前使用: 4
 # DEFAULT_CHANNELS = 6                                   # 备选: 6
 
-# --- 结果保存 ---
-DEFAULT_PROJECT = "runs/FLIR/val"                        # 验证结果保存目录
-DEFAULT_NAME = "test"                             # 实验名称
+# --- 验证参数 ---
+DEFAULT_WORKERS = 0                                      # 数据加载线程数
+DEFAULT_DEVICE = "0"                                     # CUDA 设备，'cpu' 表示 CPU
+DEFAULT_BATCH = 4                                        # 验证批次大小
+DEFAULT_IMGSZ = 640                                      # 输入图像尺寸
 
 # --- CSV 输出 ---
-DEFAULT_CSV_DIR = r"C:\Users\Patrick\Desktop\exp_results"  # CSV 保存目录
+DEFAULT_CSV_DIR = r"runs"                                # CSV 保存目录
 DEFAULT_CSV_NAME = "val_results.csv"                     # CSV 文件名
 
 # ============================================================================
@@ -67,19 +68,25 @@ def main():
     parser = argparse.ArgumentParser(
         description="YOLO 验证脚本 — 输出 Precision/Recall/mAP/FLOPs/Params/FPS 并追加到 CSV"
     )
+    # 模型权重
     parser.add_argument(
         "--weights", type=str, default=DEFAULT_WEIGHTS,
         help="模型权重目录路径（自动查找 last.pt/best.pt）或直接 .pt 文件路径",
     )
+    # 结果保存
+    parser.add_argument("--project", type=str, default=DEFAULT_PROJECT)
+    parser.add_argument("--name", type=str, default=DEFAULT_NAME)
+    # 数据集
     parser.add_argument("--data", type=str, default=DEFAULT_DATA)
+    # 模态
+    parser.add_argument("--use_simotm", type=str, default=DEFAULT_USE_SIMOTM)
+    parser.add_argument("--channels", type=int, default=DEFAULT_CHANNELS)
+    # 验证
     parser.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     parser.add_argument("--device", type=str, default=DEFAULT_DEVICE)
     parser.add_argument("--batch", type=int, default=DEFAULT_BATCH)
     parser.add_argument("--imgsz", type=int, default=DEFAULT_IMGSZ)
-    parser.add_argument("--use_simotm", type=str, default=DEFAULT_USE_SIMOTM)
-    parser.add_argument("--channels", type=int, default=DEFAULT_CHANNELS)
-    parser.add_argument("--project", type=str, default=DEFAULT_PROJECT)
-    parser.add_argument("--name", type=str, default=DEFAULT_NAME)
+    # CSV
     parser.add_argument("--csv_dir", type=str, default=DEFAULT_CSV_DIR)
     parser.add_argument("--csv_name", type=str, default=DEFAULT_CSV_NAME)
 
@@ -165,8 +172,10 @@ def main():
     csv_dir = Path(args.csv_dir)
     csv_dir.mkdir(parents=True, exist_ok=True)
     csv_path = csv_dir / args.csv_name
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     columns = [
+        "Time",
         "Model",
         "Precision",
         "Recall",
@@ -198,6 +207,7 @@ def main():
             writer.writeheader()
 
         writer.writerow({
+            "Time": now_str,
             "Model": model_name,
             "Precision": f"{precision:.4f}",
             "Recall": f"{recall:.4f}",

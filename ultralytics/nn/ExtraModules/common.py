@@ -491,3 +491,34 @@ class Conv_DE(nn.Module):
 
     def switch_to_deploy(self):
         self.deconv.switch_to_deploy()
+
+# ============================================================================
+# 2026-05-19 新增模块 (来自 ICAFusion)
+# ============================================================================
+
+from .fusion.ICAFusion import TransformerFusionBlock as ICAFusionCore
+
+# -------------------------------------------------- Att_ICAFusion (2026-05-19) ----------------------------------------------------
+class Att_ICAFusion(nn.Module):
+    """ICAFusion: 迭代交叉注意力引导的特征融合(Transformer跨模态融合)
+    用法: [[vis_layer, ir_layer], 1, Att_ICAFusion, [c2, ...]]
+    核心: 自适应池化→交叉Transformer(含位置编码)→上采样跳跃连接→拼接投影
+    """
+    def __init__(self, c1, c2, vert_anchors=16, horz_anchors=16, h=8, block_exp=4, n_layer=1):
+        super().__init__()
+        if isinstance(c1, (list, tuple)):
+            c_vis, c_ir = c1[0], c1[1]
+        else:
+            c_vis = c_ir = c1
+        self.proj_vis = nn.Conv2d(c_vis, c2, 1, 1, 0, bias=False) if c_vis != c2 else nn.Identity()
+        self.proj_ir = nn.Conv2d(c_ir, c2, 1, 1, 0, bias=False) if c_ir != c2 else nn.Identity()
+        self.fusion = ICAFusionCore(
+            d_model=c2, vert_anchors=vert_anchors, horz_anchors=horz_anchors,
+            h=h, block_exp=block_exp, n_layer=n_layer,
+        )
+    def forward(self, x):
+        if isinstance(x, (list, tuple)):
+            a, b = self.proj_vis(x[0]), self.proj_ir(x[1])
+        else:
+            a = b = self.proj_vis(x)
+        return self.fusion([a, b])
