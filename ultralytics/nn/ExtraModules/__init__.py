@@ -23,5 +23,11 @@ from .attention.ULSAM import *
 from .attention.StripPool import *
 from .fusion.AFF import *
 
+# 2026-05-19 模块 (CMFADet)
+from .attention.SFEM import *
+from .attention.IR_AFAB import *
+from .fusion.CIFusion import *
+from .conv.DEConv import *
+
 # YOLO 包装器 (必须在独立模块之后导入)
 from .common import *

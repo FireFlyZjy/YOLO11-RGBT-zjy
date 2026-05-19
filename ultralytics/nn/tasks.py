@@ -1067,6 +1067,13 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             Att_iAFF,    # iAFF: 迭代AFF,两次局部+全局注意力精炼融合权重
             Att_ULSAM,   # ULSAM: 超轻量子空间注意力,分组通道独立空间softmax注意力
             Att_StripPool, # StripPooling: 1D条带池化长程空间上下文,对细长目标友好
+            # ================================================================
+            # 2026-05-19 新增模块 (来自 CMFADet)
+            # ================================================================
+            Conv_DE,     # DEConv: 5路边缘感知卷积(训练时并行推理融合), 红外边缘模糊对症
+            Att_CIFusion, # CIFusion: 跨模态交叉交换通道注意力融合, 双向信息传递
+            Att_SFEM,    # SFEM: 空间-频率增强(C2f+FFT+Scharr), RGB分支专用
+            Att_IRAFAB,  # IR_AFAB: 自适应多核深度卷积+门控线性单元, IR分支专用
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments
@@ -1088,6 +1095,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C2PSA,
             # 可变形卷积DCNv2
             C2f_DCN,
+            # CMFADet模块 (C2f/C3k2子类，需要n参数)
+            Att_SFEM, Att_IRAFAB,
         }
     )
     # print(globals())
@@ -1105,7 +1114,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 with contextlib.suppress(ValueError):
                     args[j] = locals()[a] if a in locals() else ast.literal_eval(a)
         n = n_ = max(round(n * depth), 1) if n > 1 else n  # depth gain
-        if m in (Att_ScalSeq, Att_AFF, Att_iAFF):  # 2026-05-14: 多输入模块(from为列表), 在base_modules之前处理
+        if m in (Att_ScalSeq, Att_AFF, Att_iAFF, Att_CIFusion):  # 多输入模块(from为列表), 在base_modules之前处理
             c1 = [ch[x] for x in f]
             c2 = args[0]
             args = [c1, c2, *args[1:]]

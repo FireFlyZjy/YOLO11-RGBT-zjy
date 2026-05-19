@@ -419,3 +419,75 @@ class Att_StripPool(nn.Module):
         self.strip = StripPooling(in_channels=c2)
     def forward(self, x):
         return self.strip(self.conv(x))
+
+# ============================================================================
+# 2026-05-19 新增模块 (来自 CMFADet)
+# ============================================================================
+
+from .fusion.CIFusion import CIFusion as CIFusionCore
+from .attention.SFEM import SFEM as SFEMCore
+from .attention.IR_AFAB import IR_AFAB as IR_AFABCore
+from .conv.DEConv import DEConv as DEConvCore
+
+# -------------------------------------------------- Att_CIFusion (2026-05-19) ------------------------------------------------------
+class Att_CIFusion(nn.Module):
+    """CIFusion: 跨模态交叉交换融合, 替代Concat实现智能双模态交互
+    用法: [[vis_layer, ir_layer], 1, Att_CIFusion, [c2, r]]
+    """
+    def __init__(self, c1, c2, r=16):
+        super().__init__()
+        if isinstance(c1, (list, tuple)):
+            c_vis, c_ir = c1[0], c1[1]
+        else:
+            c_vis = c_ir = c1
+        self.conv_vis = nn.Conv2d(c_vis, c2, 1, 1, 0, bias=False) if c_vis != c2 else nn.Identity()
+        self.conv_ir = nn.Conv2d(c_ir, c2, 1, 1, 0, bias=False) if c_ir != c2 else nn.Identity()
+        self.cif = CIFusionCore(c1=c2, r=r)
+        self.proj = nn.Conv2d(c2 * 2, c2, 1, 1, 0, bias=False)
+    def forward(self, x):
+        if isinstance(x, (list, tuple)):
+            a, b = self.conv_vis(x[0]), self.conv_ir(x[1])
+        else:
+            a = b = self.conv_vis(x)
+        fused = self.cif(torch.cat([a, b], dim=1))
+        return self.proj(fused)
+
+# -------------------------------------------------- Att_SFEM (2026-05-19) ------------------------------------------------------
+class Att_SFEM(nn.Module):
+    """SFEM: 空间-频率增强模块(C2f结构), 专为RGB分支设计
+    用法: [-1, n, Att_SFEM, [c2, shortcut, g, e]]
+    """
+    def __init__(self, c1, c2, n=1, shortcut=False, g=1, e=0.5):
+        super().__init__()
+        self.sfem = SFEMCore(int(c1), int(c2), n=int(n), shortcut=shortcut, g=int(g), e=e)
+    def forward(self, x):
+        return self.sfem(x)
+
+# -------------------------------------------------- Att_IRAFAB (2026-05-19) ------------------------------------------------------
+class Att_IRAFAB(nn.Module):
+    """IR_AFAB: 红外自适应特征聚合块(C3k2结构), 专为IR分支设计
+    用法: [-1, n, Att_IRAFAB, [c2, c3k, e, g, shortcut]]
+    """
+    def __init__(self, c1, c2, n=1, c3k=False, e=0.5, g=1, shortcut=True):
+        super().__init__()
+        self.irafab = IR_AFABCore(int(c1), int(c2), n=int(n), c3k=c3k, e=e, g=int(g), shortcut=shortcut)
+    def forward(self, x):
+        return self.irafab(x)
+
+# -------------------------------------------------- Conv_DE (2026-05-19) ------------------------------------------------------
+class Conv_DE(nn.Module):
+    """DEConv: 细节增强卷积(5路边缘感知训练时并行, 推理时融合为单Conv零开销)
+    用法: [-1, 1, Conv_DE, [c2]]
+    """
+    def __init__(self, c1, c2, k=3, s=1, p=None, g=1, act=True):
+        super().__init__()
+        self.conv = nn.Conv2d(c1, c2, 1, 1, 0, bias=False) if c1 != c2 else nn.Identity()
+        self.deconv = DEConvCore(dim=c2)
+        self.bn = nn.BatchNorm2d(c2)
+        self.act = nn.SiLU() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
+
+    def forward(self, x):
+        return self.act(self.bn(self.deconv(self.conv(x))))
+
+    def switch_to_deploy(self):
+        self.deconv.switch_to_deploy()

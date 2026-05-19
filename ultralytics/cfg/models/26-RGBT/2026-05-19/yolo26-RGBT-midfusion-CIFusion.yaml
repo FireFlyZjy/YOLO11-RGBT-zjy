@@ -1,0 +1,65 @@
+# Ultralytics YOLO11 RGBT midfusion with CIFusion (Cross-modality Interaction Fusion)
+# 基于模板: yolo26-RGBT-midfusion.yaml
+# 修改日期: 2026-05-19
+# 来源: CMFADet - A Cross-Modality Feature Adaptive Interaction Approach for RGB-IR Detection
+#
+# 【与基线模板的差异】
+# ~ 修改: 3处Concat替换为Att_CIFusion (交叉交换通道注意力融合)
+#   - P3: [[6,16], 1, Concat, [1]] → [[6,16], 1, Att_CIFusion, [512]]
+#   - P4: [[8,18], 1, Concat, [1]] → [[8,18], 1, Att_CIFusion, [512]]
+#   - P5: [[10,20], 1, Concat, [1]] → [[10,20], 1, Att_CIFusion, [1024]]
+# ~ 其余层号和引用不变
+#
+nc: 3
+scales:
+  s: [0.50, 0.50, 1024]
+
+ch: 4
+backbone:
+  - [-1, 1, Silence, []]
+    # visible
+  - [0, 1, SilenceChannel, [0,3]]
+  - [-1, 1, Conv, [64, 3, 2]]
+  - [-1, 1, Conv, [128, 3, 2]]
+  - [-1, 2, C3k2, [256, False, 0.25]]
+  - [-1, 1, Conv, [256, 3, 2]]
+  - [-1, 2, C3k2, [512, False, 0.25]]
+  - [-1, 1, Conv, [512, 3, 2]]
+  - [-1, 2, C3k2, [512, True]]
+  - [-1, 1, Conv, [1024, 3, 2]]
+  - [-1, 2, C3k2, [1024, True, 0.5, True]]
+
+    # infrared
+  - [0, 1, SilenceChannel, [3,4]]
+  - [-1, 1, Conv, [64, 3, 2]]
+  - [-1, 1, Conv, [128, 3, 2]]
+  - [-1, 2, C3k2, [256, False, 0.25]]
+  - [-1, 1, Conv, [256, 3, 2]]
+  - [-1, 2, C3k2, [512, False, 0.25]]
+  - [-1, 1, Conv, [512, 3, 2]]
+  - [-1, 2, C3k2, [512, True]]
+  - [-1, 1, Conv, [1024, 3, 2]]
+  - [-1, 2, C3k2, [1024, True, 0.5, True]]
+
+  # ---- 双模态融合 (CIFusion替代Concat, 2026-05-19) ----
+  - [[6, 16], 1, Att_CIFusion, [512]]   # 21-P3 交叉交换融合
+  - [[8, 18], 1, Att_CIFusion, [512]]   # 22-P4 交叉交换融合
+  - [[10, 20], 1, Att_CIFusion, [1024]] # 23-P5 交叉交换融合
+
+  - [-1, 1, SPPF, [1024, 5, 3, True]]
+  - [-1, 2, C2PSA, [1024]]
+
+head:
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 22], 1, Concat, [1]]
+  - [-1, 2, C3k2, [512, False]]
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 21], 1, Concat, [1]]
+  - [-1, 2, C3k2, [256, False]]
+  - [-1, 1, Conv, [256, 3, 2]]
+  - [[-1, 28], 1, Concat, [1]]
+  - [-1, 2, C3k2, [512, False]]
+  - [-1, 1, Conv, [512, 3, 2]]
+  - [[-1, 25], 1, Concat, [1]]
+  - [-1, 2, C3k2, [1024, True, 0.5, True]]
+  - [[31, 34, 37], 1, Detect, [nc]]
