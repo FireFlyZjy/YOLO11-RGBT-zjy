@@ -29,5 +29,8 @@ from .attention.IR_AFAB import *
 from .fusion.CIFusion import *
 from .conv.DEConv import *
 
+# 2026-05-26 模块 (CMFADet - ATAH检测头)
+from .head import *
+
 # YOLO 包装器 (必须在独立模块之后导入)
 from .common import *

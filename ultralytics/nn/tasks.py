@@ -293,7 +293,7 @@ class BaseModel(torch.nn.Module):
         """
         self = super()._apply(fn)
         m = self.model[-1]  # Detect()
-        if isinstance(m, DETECT_CLASS):  # includes all Detect subclasses like Segment, Pose, OBB, WorldDetect
+        if isinstance(m, DETECT_CLASS) or isinstance(m, Detect_ATAH):  # includes all Detect subclasses like Segment, Pose, OBB, WorldDetect
             m.stride = fn(m.stride)
             m.anchors = fn(m.anchors)
             m.strides = fn(m.strides)
@@ -359,7 +359,7 @@ class DetectionModel(BaseModel):
 
         # Build strides
         m = self.model[-1]  # Detect()
-        if isinstance(m, (DETECT_CLASS + SEGMENT_CLASS + POSE_CLASS + OBB_CLASS + V10_DETECT_CLASS)):  # includes all Detect subclasses like Segment, Pose, OBB, WorldDetect
+        if isinstance(m, (DETECT_CLASS + SEGMENT_CLASS + POSE_CLASS + OBB_CLASS + V10_DETECT_CLASS)) or isinstance(m, Detect_ATAH):  # includes all Detect subclasses like Segment, Pose, OBB, WorldDetect
             # s = 256  # 2x min stride
             s = 256  # 2x min stride
             m.inplace = self.inplace
@@ -1122,6 +1122,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             c1 = [ch[x] for x in f]
             c2 = args[0]
             args = [c1, c2, *args[1:]]
+        elif m is Detect_ATAH:                                               # ATAH检测头 (2026-05-26)
+            args.append([ch[x] for x in f])
         elif m in base_modules :
             c1, c2 = ch[f], args[0]
             # print(m,args)

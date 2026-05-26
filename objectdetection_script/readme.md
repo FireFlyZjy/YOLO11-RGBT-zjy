@@ -1,0 +1,215 @@
+# Object Detection Script
+这个项目主要是提供一些关于目标检测的代码和改进思路参考.
+
+### [BiliBili视频指南](https://github.com/z1069614715/objectdetection_script/blob/master/bilibili-guide.md)
+
+# Project <需要入手请加企鹅1615905974/1069614715,如添加不上可bilibili私聊直发企鹅号码,最好好友请求也设置不需要验证就可以加上>
+1. 基于Ultralytics的yolov8、yolov10改进项目.(69.9¥)
+    
+    [目前已有的改进方案和更新详细公告](https://github.com/z1069614715/objectdetection_script/blob/master/yolo-improve/yolov8v10-project.md)  
+    项目简单介绍，详情请看项目详解.
+    1. 提供修改好的代码和每个改进点的配置文件,相当于积木都给大家准备好,大家只需要做实验和搭积木(修改yaml配置文件组合创新点)即可,装好环境即可使用.
+    2. 后续的改进方案都会基于这个项目更新进行发布，在群公告进行更新百度云链接.
+    3. 购买了本项目的都会赠送yolov5-PAGCP通道剪枝算法代码和相关实验参数命令.
+    4. 购买后进YOLOV8V10交流群(代码视频均在群公告),群里可交流代码和论文相关,目前1群2群已满,现在进的是3群,气氛活跃.
+    5. 项目因为(价格问题)不附带一对一私人答疑服务,群里附带答疑服务,平时我有时间都会回复群里部分问题.
+    6. 里面配备使用说明(部分改进点使用复杂度高、二次创新、原创的模块都会有对应的视频进行说明)
+
+2. 基于Ultralytics的yolo11、yolo12改进项目.(69.9¥)
+    
+    [目前已有的改进方案和更新详细公告](https://github.com/z1069614715/objectdetection_script/blob/master/yolo-improve/yolov11-project.md)  
+    项目简单介绍，详情请看项目详解.
+    1. 提供修改好的代码和每个改进点的配置文件,相当于积木都给大家准备好,大家只需要做实验和搭积木(修改yaml配置文件组合创新点)即可,装好环境即可使用.
+    2. 后续的改进方案都会基于这个项目更新进行发布，在群公告进行更新百度云链接.
+    3. 购买了本项目的都会赠送yolov5-PAGCP通道剪枝算法代码和相关实验参数命令.
+    4. 购买后进YOLOV11交流群(代码视频均在群公告),群里可交流代码和论文相关,气氛活跃.
+    5. 项目因为(价格问题)不附带一对一私人答疑服务,群里附带答疑服务,平时我有时间都会回复群里部分问题.
+    6. 里面配备使用说明(部分改进点使用复杂度高、二次创新、原创的模块都会有对应的视频进行说明)。
+    7. 包含yolo12-目标检测、实例分割、关键点检测、旋转目标检测、分类配置文件，可以通过仅修改配置文件的方式改进yolo12。
+
+3. 基于YOLOV5,YOLOV7的(剪枝+知识蒸馏)项目.(129.9¥)[项目详解](https://github.com/z1069614715/objectdetection_script/blob/master/yolo-improve/yolov5v7-light.md)
+
+    1. 模型轻量化,部署必备之一!
+    2. 项目里面配套几个剪枝和蒸馏的示例,并且都配有视频讲解,供大家理解如何进行剪枝和蒸馏.
+    3. 购买后进YOLOV5V7轻量化交流群(代码视频均在群公告),轻量化问题都可在群交流,因为剪枝蒸馏问题比较困难,所以剪枝蒸馏问题可以群里提问,我都会群里回复相关问题.
+
+4. 基于Ultralytics的RT-DETR(CVPR2024)改进项目.(89.9¥)
+
+    [目前已有的改进方案和更新详细公告](https://github.com/z1069614715/objectdetection_script/blob/master/yolo-improve/rtdetr-project.md)  
+    项目简单介绍，详情请看项目详解.
+    1. 提供修改好的代码和每个改进点的配置文件,相当于积木都给大家准备好,大家只需要做实验和搭积木(修改yaml配置文件组合创新点)即可,装好环境即可使用.
+    2. 后续的改进方案都会基于这个项目更新进行发布,在群公告进行更新百度云链接.
+    3. 购买了RT-DETR项目的都会赠送yolov5-PAGCP通道剪枝算法代码和相关实验参数命令.
+    4. 购买后进RT-DETR交流群(代码视频均在群公告),群里可交流代码和论文相关.
+    5. 项目因为(价格问题)不附带一对一私人答疑服务,群里附带答疑服务,平时我有时间都会回复群里部分问题.
+    6. RT-DETR项目包含多种基准模型改进方案(RT-DETR-R18,RT-DETR-R50,RT-DETR-L,Yolov8-Detr,Yolov5-Detr),具体可点击[目前已有的改进方案和更新详细公告](https://github.com/z1069614715/objectdetection_script/blob/master/yolo-improve/rtdetr-project.md)看详细.
+    7. 里面配备使用说明(部分改进点使用复杂度高、二次创新、原创的模块都会有对应的视频进行说明)
+
+5. 基于YOLOV8V10V11V12的剪枝蒸馏项目.  
+   
+    注意:
+    1. 本次项目就直接提供几个文件，到时候会提供教程，自行复制到项目一/二上即可跑，原理上其他版本应该也可以跑，但是开发的时候我是基于项目一/二的(ultralytics版本号:v8.1.9、v8.2.50、v8.3.1)上开发的，附近的版本的话应该也可以跑，但是没办法一一验证，所以需自行考虑!
+    2. 里面会提供一个官方纯净版的(ultralytics版本号:8.1.9、8.2.50、8.3.1、8.3.78)的ultralytics以及其对应的剪枝蒸馏代码，以便没有购买项目一/二的同学使用。
+
+    剪枝:[项目详解](https://github.com/z1069614715/objectdetection_script/blob/master/yolo-improve/yolov8-compress.md)(89.9¥)
+    1. 模型轻量化,部署,大论文堆工作量必备之一!
+    2. 项目里面配套剪枝示例(示例中是基于项目一/二的改进代码进行剪枝,如没有入手项目一/二是不包含这部分代码的,但对你理解剪枝操作没影响),并且都配有视频讲解,供大家理解如何进行剪枝.
+    3. 购买后进YOLOV8V10V11V12剪枝交流群(代码视频均在群公告),因为剪枝操作有一定的难度,所以剪枝问题可以群里提问,我都会群里回复相关问题.
+    4. 支持yolov8中的目标检测、实例分割、姿态检测、旋转目标检测剪枝、yolov10目标检测剪枝、yolo11/12(目标检测、实例分割、姿态检测、旋转目标检测剪枝)。
+
+    蒸馏:[项目详解](https://github.com/z1069614715/objectdetection_script/blob/master/yolo-improve/yolov8-distill.md)(89.9¥)
+    1. 模型轻量化,部署,大论文堆工作量必备之一!
+    2. 项目里面配套蒸馏示例(部分示例中是基于项目一/二的改进代码进行蒸馏,如没有入手项目一/二是不包含这部分代码的,但对你理解蒸馏操作没影响),并且都配有视频讲解,供大家理解如何进行蒸馏.
+    3. 购买后进YOLOV8V10V11V12蒸馏交流群(代码视频均在群公告),因为蒸馏操作有一定的难度,所以蒸馏操作问题可以群里提问,我都会群里回复相关问题.
+    4. 支持yolov8中的目标检测、实例分割、姿态检测、旋转目标检测蒸馏、yolov10目标检测蒸馏、yolo11/12(目标检测、实例分割、姿态检测、旋转目标检测蒸馏)。
+    5. 实例分割、姿态检测、旋转目标检测暂不支持BCKD蒸馏方法.
+
+6. 基于Ultralytics的RT-DETR(CVPR2024)的剪枝蒸馏项目.  
+   
+    注意：基于Ultralytics的RT-DETR的剪枝蒸馏项目是基于项目四上进行开发的，所以入手剪枝蒸馏项目也需要项目四才能使用。
+
+    剪枝：[项目详解](https://github.com/z1069614715/objectdetection_script/blob/master/yolo-improve/rtdetr-compress.md)(89.9¥)
+    1. 模型轻量化,部署,大论文堆工作量必备之一!
+    2. 项目里面配套剪枝示例(包含一些项目四中的改进模型的剪枝教程),并且都配有视频讲解,供大家理解如何进行蒸馏.
+    3. 购买后进RTDETR剪枝交流群(代码视频均在群公告),因为剪枝操作有一定的难度,所以剪枝操作问题可以群里提问,我都会群里回复相关问题.
+    4. 经过我目前的实验,rtdetr很难进行稀疏训练,因此本项目目前不包含稀疏训练的剪枝方法,如果一定要进行稀疏训练的剪枝慎入,目前项目包含6种不需要稀疏训练方法的剪枝.
+
+    蒸馏：[项目详解](https://github.com/z1069614715/objectdetection_script/blob/master/yolo-improve/rtdetr-distill.md)(69.9¥)  
+    1. 模型轻量化,部署,大论文堆工作量必备之一!
+    2. 项目里面配套蒸馏示例,并且都配有视频讲解,供大家理解如何进行蒸馏.
+    3. 购买后进RTDETR蒸馏交流群(代码视频均在群公告),因为蒸馏操作有一定的难度,所以蒸馏操作问题可以群里提问,我都会群里回复相关问题.
+    4. 知识蒸馏整体修改难度大，代表少人使用，物以稀为贵，增加文章的创新度！
+
+7. 基于CVPR2025-DEIM的改进项目.(288¥)
+    
+    项目详细介绍请看[此处](https://github.com/z1069614715/objectdetection_script/blob/master/cvpr2025-deim-project.md)
+    1. 相比官方有更多分析的图表，基本论文常用到的都有.(YOLO指标、FPS、模型大小、COCO指标中的每类tsml等等指标、热力图、特征图、漏检误检可视化....)
+    2. 总所周知DETR系列模型检测头非常难改，需要代码功底和一定知识存储才能改，但本项目有DETR检测头的改进，并且还有视频讲解整体实现原理.
+    3. 此项目有一些模型创新课题的视频，由我整理一下比较新且有创新空间的模块和讲解视频，想学模块创新一定不可错过.
+    4. 相比官方的代码修复了很多存在的bug，做科研没有一个稳定的代码框架怎么行呢？
+    5. 目前包含学生-教师类型的知识蒸馏、模型导出(onnx、tensorrt)、ByteTrack目标跟踪等凑工作量的内容，大小论文一网打尽～
+    6. 支持实例分割，给实例分割的同学们多了一个非常nice的选择～
+    7. 支持DINOV3主干，即使数据量少，得益于DINOV3性能依然抗打～
+    8. DFine/DEIM 支持图像多模态联合训练，为创新研究与论文工作量的双重提升注入强劲动力～
+    9. 更多请点击上述链接进行查看～
+
+8. 基于YOLO|RTDETR多模态目标检测项目.(原价288¥,若已购买yolo8101112或rtdetr项目的则优惠50¥=238¥)
+
+    项目详细介绍请看[此处](https://github.com/z1069614715/objectdetection_script/blob/master/mutilmodel-project.md)
+
+9. Ultralytics-YOLO改进项目.(99¥)
+
+    项目详细介绍请看[此处](https://github.com/z1069614715/objectdetection_script/blob/master/Ultralytics-YOLO-project.md)
+    1. 本项目集成了YOLOv8、v10、v11、v12乃至前沿的YOLO26等全系列基础模型。 无论是做横向对比实验，还是纵向的版本改进，无需到处找资源，一个项目就能满足你所有的实验需求！
+    2. 核心代码已实现高度模块化与解耦，专为新手优化。 你完全不需要死磕底层复杂代码，只需像搭积木一样简单修改YAML配置文件，就能轻松实现各种改进模块的自由组合。
+    3. 面对日益内卷的YOLO赛道，简单的“缝合”已难满足毕业要求。 本项目不仅提供现成的创新方案，更配套独家“二次创新”课程，授人以渔。我们将手把手教你掌握模块设计的底层逻辑，助你从“模仿者”进阶为“创造者”，设计出独属于你的创新模块。
+    4. 针对有代码基础但受困于Ultralytics复杂架构的同学， 本项目引入了来自DFine、DEIM项目中成熟的“万物皆可融”架构思想。你无需纠结模块注册等信息，只需遵循我所提供的标准接口规范，即可将自定义魔改模块无缝融入YAML配置，与各类CSP变种灵活结合。
+    5. 实验跑通了，却不知道如何写创新点？ 本项目将定期拆解高分论文，传授写作心法，教你如何将实验成果转化为逻辑严密、亮点突出的高质量学术论文，解决写作难题！
+    6. 毕业设计缺少高大上的展示界面？ 别担心，项目会内置基于PyQt或HTML的通用可视化界面，开箱即用，完美补齐毕业论文的最后一块拼图，助你从容应对答辩！
+    7. 购买即享专属技术交流群， 这里有业内公认的高效答疑服务，以及志同道合的伙伴互助交流。拒绝闭门造车，让我们带你避开深坑，高效通关！  
+    
+    **注意：部分功能在项目初期可能尚未实现，将随着项目的持续开发逐步补齐完善。**
+
+10. 基于YOLO和RT-DETR的论文全流程指导项目.(原价238¥，若已购买yolo8101112或rtdetr项目或deim项目的则优惠50¥=188¥)[项目详解](https://github.com/z1069614715/objectdetection_script/blob/master/yolo-improve/paper.md)  
+    我们目前有非常多的代码项目，几乎是全网最全价格最优惠性格比最高的一家，但是难免有些同学在做完实验后还是完全不懂应该怎么去写or不想走太多弯路的情况，因此开展这个基于YOLO和RT-DETR的论文全流程指导项目，本项目致力于帮助那些在论文道路上极其困难的同学，基本上配合上述的一些改进项目和此论文全流程指导项目再加上自己的一点努力可以完全实现毕业无忧,项目简介如下：
+
+    1. 直播内容涉及到发论文的整个论文框架体系的方方面面，每次直播都会优先讲大家最想听的部分，根据课程目录投票决定。
+    2. 直播答疑每个人的问题，上课前会使用excel表格在线收集大家的问题，直播时集中讲解。
+    3. 直播的回放视频会实时上传到百度网盘，并且视频均为加密视频，一人一机一码，且课程目录的每部分对应检索直播回放视频链接方便大家后续查找，实时更新百度网盘链接内容和使用说明文档。
+    4. 购买后进论文指导交流群(视频均在群公告),群里可交流论文相关。
+    5. 项目不附带私人答疑服务,群里附带答疑服务,平时我有时间都会回复群里部分问题。
+    6. 不定时收集群友反馈，有问题可以在群内随时提出，逐步完善课程体系，让大家高效快速发出论文。
+    7. 项目有效期为一年，时间从付费进群那天开始算，例如我2024年5月2日进群，2025年5月2日到期，一年时间足以解决所有论文相关的问题。
+    8. 项目公开课试听B站链接1：[长达80分钟的<论文中对比实验+消融实验+论文工作量创新点评估+答疑>解答直播回放来啦~](https://www.bilibili.com/video/BV1u5rCYmE4k/)
+    9. 项目公开课试听B站链接2：[长达60分钟的<实验向论文过渡指导+论文写作顺序+创新性评估+公开答疑>直播回放来啦~](https://www.bilibili.com/video/BV1oJPueREfR/)
+    10. 项目公开课试听B站链接3：[长达2小时的论文高效画图专题全面剖析：数据可视化+模型图绘制+实验数据分析图+答疑直播，全程高能！！！！](https://www.bilibili.com/video/BV1xEEEzZEUs)
+
+## 导购指南
+
+不知道怎么选？按你的目标直接对号入座：
+
+### 1. 只求毕业，期刊无硬性要求
+- 推荐项目：**1、2、9（推荐项目9，性价比最高）**
+- 适合人群：希望快速跑通实验、以“稳妥毕业”为第一目标。
+- 标签：`上手快` `性价比高` `代码投入低` `训练速度快`
+
+### 2. 有期刊要求，但不想深钻代码
+- 推荐项目：**4**
+- 适合人群：希望做出有区分度的实验，但不希望在底层代码上投入过多时间。
+- 标签：`上手快` `DETR发论文友好` `代码投入低`
+
+### 3. 追逐热点，愿意学代码，追求创新，冲刺SCI
+- 推荐项目：**7、8**
+- 适合人群：愿意投入更多时间做方法创新、实验分析和前沿方向探索。
+- 标签：`前沿热点` `创新空间大` `冲刺高区SCI`
+
+### 4. 大论文需要凑工作量 + 有部署需求
+- 推荐项目：**5、6**
+- 适合人群：希望同时覆盖“剪枝/蒸馏/部署”链路，补齐论文工作量与落地内容。
+- 标签：`大论文工作量充足` `部署导向` `实用性强`
+- 注意：项目 6 基于项目 4 开发，需配合项目 4 使用。
+
+### 5. 实验做完后，论文完全不会写
+- 推荐项目：**10**
+- 适合人群：实验已完成，但论文结构、创新表述、图表组织和写作流程缺少方法。
+- 标签：`写作指导` `答疑导向` `适合论文收尾`
+
+## 如果上述项目还不能满足您的需求，我们这里还有专业AI算法定制～
+![Advertising Board](https://github.com/z1069614715/objectdetection_script/blob/master/Customization.png)
+
+## GPU服务器推荐
+为了让大家在科研路上一路畅通、降低初期上手难度、并且降低大家租服务器的成本，这边联合多个平台提供一个稳定、快速、便宜的服务器租用平台给大家，经过多次沟通，在我的链接上注册or充值可以给到大家福利如下：
+
+---------------------------------------- 智算云扉 ----------------------------------------
+1. 价格非常优惠，几乎全网最低。3090:0.99/h,4090d最低:1.18/h,4090-24GB:最低1.78/h,4090D-48G:2.52/h,4090-48GB:3.19/h
+2. 使用我的专属优惠码进行充值可以额外获取百分之5的算力点。举个例子:我要充100，本来我只能得100算力点，使用我的优惠码后，可以得到105算力点！下单链接：https://waas.aigate.cc/user/charge?channel=BLBLMGMJ&coupon=DLJGKNBEE1 或者手动填优惠码：DLJGKNBEE1，点击验证即可。优惠码界面在充值入口里面
+3. 智算云扉平台上，我已经提供好我自己改进项目的专属镜像、镜像里面会给大家配置好环境、并且相对应需要编译的模型都会给大家配置好、真正实现上传数据集和代码立刻开跑！跑实验也快人一步！直接在镜像社区/云扉工坊搜索yolo关键词就可以看到。
+4. 智算云扉平台上，我为大家提供了一些常用的数据集，并且格式已经转换好，包含COCO2017,VOC2007+2012,CrowdHuman,Visdrone2019,BDD100K.
+5. 支持无卡模式开机、支持绑定百度云账号,直接把网盘的内容秒传到云磁盘，省下数据集上传的时间！
+6. 可以通过qq搜索以下群号：798692951，添加智算云扉平台交流群，里面有智算云扉官方的客服帮助大家答疑相关平台的问题！
+7. B站视频教程：https://www.bilibili.com/video/BV11DXTYiENS/
+8. 20260114更新:数据集的位置有所变动，请看这期视频:https://www.bilibili.com/video/BV1TDrLBfEr7/
+
+---------------------------------------- DAModel ----------------------------------------
+1. 在DAModel平台上现有的优惠折扣上，额外加上(按需95折、包日97折、包月99折扣优惠)，假如平台租用一台4090按每小时是2.18，假设平台的优惠福利是85折，那么在我的用户下再加上95折，最终价格就是2.18*0.85*0.95=1.76！(优惠目前仅限4090相关服务器)
+2. DAModel平台上，我已经提供好我自己改进项目的专属镜像、镜像里面会给大家配置好环境、并且相对应需要编译的模型都会给大家配置好、真正实现上传数据集和代码立刻开跑！跑实验也快人一步！视频参考：https://www.bilibili.com/video/BV1mg2SYGEGF/
+3. DAModel平台上，我为大家提供了一些常用的数据集，并且格式已经转换好，包含COCO2017,VOC2007+2012,CrowdHuman,Visdrone2019,BDD100K. 视频参考：https://www.bilibili.com/video/BV1UV5qzuEGf/
+4. 谨记，以上福利仅在以下注册链接上进行注册才享有！注册链接：https://damodel.com/register?source=47EC6199
+5. 可以通过qq搜索以下群号：728938131，添加DAModel平台交流群，里面有DAModel官方的客服帮助大家答疑相关平台的问题！
+
+# Explanation
+- **yolo**  
+    yolo文件夹是针对yolov5,yolov7,yolov8的数据集处理脚本，具体可看[readme.md](https://github.com/z1069614715/objectdetection_script/blob/master/yolo/readme.md).  
+    视频教学地址：[哔哩哔哩](https://www.bilibili.com/video/BV1tM411a7it/).  
+
+- **damo-yolo**  
+    damo-yolo文件夹是针对DAMO-YOLO的数据集处理脚本，具体可看[readme.md](https://github.com/z1069614715/objectdetection_script/blob/master/damo-yolo/readme.md).  
+    目前只支持voc转coco.  
+    视频教学地址：[哔哩哔哩](https://www.bilibili.com/video/BV1M24y1v7Uf/).   
+
+- **yolo-improve**  
+    yolo-improve文件夹是提供一些关于yolo系列模型改进思路的源码，具体可看[readme.md](https://github.com/z1069614715/objectdetection_script/blob/master/yolo-improve/readme.md).   
+
+- **yolo-gradcam**  
+    yolo-gradcam文件夹是提供一些关于可视化yolo模型的热力图的源码，具体可看[readme.md](https://github.com/z1069614715/objectdetection_script/blob/master/yolo-gradcam/README.md).
+
+- **cv-attention**  
+    cv-attention文件夹是关于CV的一些经典注意力机制，具体可看[readme.md](https://github.com/z1069614715/objectdetection_script/blob/master/cv-attention/readme.md).
+
+- **objectdetection-tricks**  
+    objectdetection-tricks文件夹是关于目标检测中各种小技巧，具体可看[readme.md](https://github.com/z1069614715/objectdetection_script/blob/master/objectdetection-tricks/readme.md).
+
+- **mmdet-course**  
+    mmdet-course文件夹是提供mmdet教程相关资料，具体可看[readme.md](https://github.com/z1069614715/objectdetection_script/blob/master/mmdet-course/readme.md)
+
+- **data-offline-aug**  
+    data-offline-aug文件夹是关于图像任务的离线数据增强脚本，具体可看[readme.md](https://github.com/z1069614715/objectdetection_script/blob/master/data-offline-aug/readme.md)
+
+[![Forkers repo roster for @z1069614715/objectdetection_script](https://reporoster.com/forks/z1069614715/objectdetection_script)](https://github.com/z1069614715/objectdetection_script/network/members)
+[![Stargazers repo roster for @z1069614715/objectdetection_script](https://reporoster.com/stars/z1069614715/objectdetection_script)](https://github.com/z1069614715/objectdetection_script/stargazers)
+
+# Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=z1069614715/objectdetection_script&type=Date)](https://star-history.com/#z1069614715/objectdetection_script&Date)
+
+<a id="0"></a>
