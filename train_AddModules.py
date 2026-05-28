@@ -1,3 +1,23 @@
+"""
+YOLO 训练+验证一体化脚本 (全参数 argparse 支持)
+
+用法示例:
+    # 使用默认参数训练
+    python train_AddModules.py
+
+    # 只改模型和数据集
+    python train_AddModules.py --model_yaml path/to/model.yaml --data path/to/data.yaml
+
+    # 调整训练超参数 (顺序任意, 未指定的使用默认值)
+    python train_AddModules.py --epochs 200 --batch 8 --lr0 0.001 --device 0,1
+
+    # 断点续训
+    python train_AddModules.py --resume runs/.../weights/last.pt --epochs 150
+
+    # 查看所有可配置参数
+    python train_AddModules.py --help
+"""
+
 import argparse
 import csv
 import sys
@@ -7,9 +27,19 @@ from pathlib import Path
 
 from ultralytics import YOLO
 
+class _DummyEMA:
+    """占位EMA — 跳过参数更新但保留模型引用, 兼容所有 EMA 属性和 checkpoint。"""
+    def __init__(self, model):
+        from copy import deepcopy
+        self.ema_model = deepcopy(model).eval()
+        self.updates = 0
+    def update(self, model): pass
+    def update_attr(self, model, include=None): pass
+    @property
+    def ema(self): return self.ema_model
+
 # ============================================================================
-# 可修改的超参数 / Configurable Hyperparameters
-# 涵盖 train_RGBT_midfuse_testAddModules.py 中所有参数（包括被注释掉的备选值）
+# 默认超参数 — 直接修改此处改变默认值, 或通过命令行 --参数名 覆盖
 # ============================================================================
 
 # --- 模型配置 ---
@@ -47,13 +77,17 @@ DEFAULT_IMGSZ = 640                                      # 输入图像尺寸
 DEFAULT_WORKERS = 0                                      # 数据加载线程数
 DEFAULT_DEVICE = "0"                                     # CUDA 设备，'cpu' 表示 CPU
 DEFAULT_OPTIMIZER = "SGD"                                # 优化器，可选 SGD/Adam/AdamW 等
-# DEFAULT_LR0 = 0.002                                    # 初始学习率 (已被注释)
+DEFAULT_LR0 = 0.0                                        # 初始学习率 (0 = 使用YOLO默认值)
 DEFAULT_CLOSE_MOSAIC = 10                                # mosaic 增强关闭轮数
 
 # --- 数据增强 ---
 DEFAULT_CACHE = False                                    # 是否缓存数据集到内存
-# DEFAULT_AMP = False                                    # 是否关闭自动混合精度 (已被注释)
-# DEFAULT_FRACTION = 0.2                                 # 数据集使用比例 (已被注释)
+DEFAULT_AMP = True                                       # 自动混合精度 (默认开启)
+DEFAULT_FRACTION = 1.0                                   # 数据集使用比例, <1.0 则只取部分数据
+
+# --- 双模态配对 ---
+# 可选: ['visible','infrared'] / ['rgb', 'ir'] / ['images', 'images_ir'] / ['images', 'image']
+DEFAULT_PAIRS_RGB_IR = ''                                # 留空使用数据集默认配置
 
 # --- 验证参数 (训练后自动验证) ---
 # 验证时使用训练后的 best.pt
@@ -90,9 +124,19 @@ def main():
     parser.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     parser.add_argument("--device", type=str, default=DEFAULT_DEVICE)
     parser.add_argument("--optimizer", type=str, default=DEFAULT_OPTIMIZER)
+    parser.add_argument("--lr0", type=float, default=DEFAULT_LR0,
+                        help="初始学习率 (0=使用YOLO默认值)")
     parser.add_argument("--close_mosaic", type=int, default=DEFAULT_CLOSE_MOSAIC)
     parser.add_argument("--cache", type=lambda x: x.lower() == 'true' if isinstance(x, str) else x,
                         default=DEFAULT_CACHE)
+    parser.add_argument("--amp", type=lambda x: x.lower() == 'true' if isinstance(x, str) else x,
+                        default=DEFAULT_AMP)
+    parser.add_argument("--ema", type=lambda x: x.lower() == 'true' if isinstance(x, str) else x,
+                        default=True, help="是否启用EMA (自定义检测头需--ema false)")
+    parser.add_argument("--fraction", type=float, default=DEFAULT_FRACTION,
+                        help="数据集使用比例, <1.0则只取部分(调试用)")
+    parser.add_argument("--pairs_rgb_ir", type=str, default=DEFAULT_PAIRS_RGB_IR,
+                        help="双模态配对规则, 如 'visible,infrared' (逗号分隔)")
     # 恢复训练
     parser.add_argument("--resume", type=str, default=DEFAULT_RESUME,
                         help="续训 checkpoint 路径 (e.g. runs/.../weights/last.pt)，留空则从头训练")
@@ -106,7 +150,6 @@ def main():
 
     # ---- 提取模型名称 (从 YAML 文件名) ----
     yaml_stem = Path(args.model_yaml).stem
-    # 去除前缀 "yolo26-RGBT-midfusion-" 得到核心模块名
     if yaml_stem.startswith("yolo26-RGBT-midfusion-"):
         model_short = yaml_stem[len("yolo26-RGBT-midfusion-"):]
     elif yaml_stem.startswith("yolo26-RGBT-"):
@@ -114,12 +157,38 @@ def main():
     else:
         model_short = yaml_stem
 
-    print(f"Model YAML:  {args.model_yaml}")
-    print(f"Model Short: {model_short}")
+    # 解析 pairs_rgb_ir
+    pairs = None
+    if args.pairs_rgb_ir:
+        pairs = [x.strip() for x in args.pairs_rgb_ir.split(",")]
+
+    # ---- 启动时打印全部配置 ----
+    print("=" * 60)
+    print("  训练配置")
+    print("=" * 60)
+    print(f"  模型YAML:     {args.model_yaml}")
+    print(f"  模型简称:     {model_short}")
     if resume_mode:
-        print(f"Resume from: {args.resume}")
+        print(f"  续训路径:     {args.resume}")
     else:
-        print(f"Pretrained:  {args.pretrained}")
+        print(f"  预训练权重:   {args.pretrained}")
+    print(f"  数据集:       {args.data}")
+    print(f"  模态:         {args.use_simotm}  (通道数: {args.channels})")
+    if pairs:
+        print(f"  配对规则:     {pairs}")
+    print(f"  保存路径:     {args.project}/{args.name}")
+    print(f"  Epochs:       {args.epochs}")
+    print(f"  Batch:        {args.batch}")
+    print(f"  Imgsz:        {args.imgsz}")
+    print(f"  Device:       {args.device}")
+    print(f"  Optimizer:    {args.optimizer}" + (f"  lr0={args.lr0}" if args.lr0 > 0 else "  lr0=default"))
+    print(f"  Close Mosaic: {args.close_mosaic}")
+    print(f"  AMP:          {args.amp}")
+    print(f"  Fraction:     {args.fraction}")
+    print(f"  Workers:      {args.workers}")
+    print(f"  Cache:        {args.cache}")
+    print(f"  CSV:          {args.csv_dir}/{args.csv_name}")
+    print("=" * 60)
 
     # ---- 步骤1: 加载模型 ----
     print("\n[Step 1/4] Loading model...")
@@ -127,10 +196,10 @@ def main():
     if resume_mode:
         # 续训模式: 从 checkpoint 恢复
         print(f"Resume checkpoint: {args.resume}")
-        model = YOLO(args.resume)
+        model = YOLO(args.resume, task='detect')
     else:
         # 从头训练模式: 加载 YAML + 预训练权重
-        model = YOLO(args.model_yaml).load(args.pretrained)
+        model = YOLO(args.model_yaml, task='detect').load(args.pretrained)
 
     # ---- 获取 FLOPs 与 Params (训练前) ----
     n_l, n_p, n_g, flops = model.info(verbose=True)
@@ -155,12 +224,25 @@ def main():
         project=args.project,
         name=args.name,
     )
+    if args.lr0 > 0:
+        common_train_args["lr0"] = args.lr0
+    if not args.amp:
+        common_train_args["amp"] = False
+    if args.fraction < 1.0:
+        common_train_args["fraction"] = args.fraction
+    if pairs:
+        common_train_args["pairs_rgb_ir"] = pairs
+
 
     if resume_mode:
         # resume=True 从 checkpoint 恢复 optimizer / 学习率调度器等状态
         common_train_args["resume"] = True
     else:
         common_train_args["optimizer"] = args.optimizer
+
+    # 自定义检测头(DecoupledHead/ATAH)需关闭EMA, 通过callback替换为占位对象
+    if not args.ema:
+        model.add_callback("on_train_start", lambda t: setattr(t, 'ema', _DummyEMA(t.model)))
 
     train_result = model.train(**common_train_args)
 
@@ -178,7 +260,7 @@ def main():
         print(f"Validating: {best_pt_str}")
 
         # 加载训练好的模型
-        val_model = YOLO(best_pt_str)
+        val_model = YOLO(best_pt_str, task='detect')
 
         # 运行验证
         metrics = val_model.val(

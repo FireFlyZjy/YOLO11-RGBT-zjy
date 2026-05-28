@@ -1,9 +1,0 @@
-PyYAML
-tensorboard
-scipy
-thop
-transformers
-einops
-prettytable
-PyWavelets
-polars

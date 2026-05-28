@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(/d/Anaconda/envs/torch310/python.exe -c ' *)"
+      "Bash(/d/Anaconda/envs/torch310/python.exe -c ' *)",
+      "Bash(python -c ' *)",
+      "Bash(mkdir -p \"C:/Users/Patrick/Desktop/DeepLearning/Code/YOLOv11to26-RGBT/ultralytics/cfg/models/26-RGBT/2026-05-27-innovations\")",
+      "Bash(mkdir -p \"C:/Users/Patrick/Desktop/DeepLearning/Code/YOLOv11to26-RGBT/docs\")"
     ]
   }
 }

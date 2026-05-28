@@ -1,0 +1,52 @@
+# SpectralFusion: Full-Spectrum End-to-End RGB-Infrared Detection Network
+# 创新: RGB频域解耦+空间频率增强 / IR频率自适应膨胀+自适应聚合 / Transformer交叉注意力融合 / DCT全局
+# 7模块组合, 全频谱处理, 目标最强精度
+# 原位替换, 无层号位移
+
+nc: 3
+scales:
+  s: [0.50, 0.50, 1024]
+
+ch: 4
+backbone:
+  - [-1, 1, Silence, []]                                              # 0
+  - [0, 1, SilenceChannel, [0,3]]                                     # 1-VIS
+  - [-1, 1, FDConv, [64, 3, 2]]                                      # 2 ← FDConv (RGB频域解耦)
+  - [-1, 1, FDConv, [128, 3, 2]]                                     # 3 ← FDConv
+  - [-1, 2, Att_SFEM, [256, False, 1, 0.25]]                         # 4-P3 RGB ← SFEM (空间频率增强)
+  - [-1, 1, FDConv, [256, 3, 2]]                                     # 5 ← FDConv
+  - [-1, 2, C3k2, [512, False, 0.25]]                                # 6-P4 RGB
+  - [-1, 1, FDConv, [512, 3, 2]]                                     # 7 ← FDConv
+  - [-1, 2, C3k2, [512, True]]                                        # 8-P5 RGB
+  - [-1, 1, FDConv, [1024, 3, 2]]                                    # 9 ← FDConv
+  - [-1, 2, C3k2, [1024, True, 0.5, True]]                          # 10
+  - [0, 1, SilenceChannel, [3,4]]                                     # 11-IR
+  - [-1, 1, FADC, [64, 3, 2]]                                        # 12 ← FADC (IR频率自适应膨胀)
+  - [-1, 1, FADC, [128, 3, 2]]                                       # 13 ← FADC
+  - [-1, 2, Att_IRAFAB, [256, False, 0.25, 1, True]]                 # 14-P3 IR ← IRAFAB
+  - [-1, 1, FADC, [256, 3, 2]]                                       # 15 ← FADC
+  - [-1, 2, C3k2, [512, False, 0.25]]                                # 16-P4 IR
+  - [-1, 1, FADC, [512, 3, 2]]                                       # 17 ← FADC
+  - [-1, 2, C3k2, [512, True]]                                        # 18-P5 IR
+  - [-1, 1, FADC, [1024, 3, 2]]                                      # 19 ← FADC
+  - [-1, 2, C3k2, [1024, True, 0.5, True]]                          # 20
+  - [[6, 16], 1, Att_ICAFusion, [512]]                                # 21-P3 ← ICAFusion (Transformer交叉注意力)
+  - [[8, 18], 1, Att_ICAFusion, [512]]                                # 22-P4 ← ICAFusion
+  - [[10, 20], 1, Att_ICAFusion, [1024]]                              # 23-P5 ← ICAFusion
+  - [-1, 1, vHeat, [1024]]                                            # 24 ← vHeat (DCT全局热传导)
+  - [-1, 2, C2PSA, [1024]]                                           # 25
+
+head:
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]                       # 26
+  - [[-1, 22], 1, Concat, [1]]                                        # 27
+  - [-1, 2, C3k2, [512, False]]                                       # 28
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]                       # 29
+  - [[-1, 21], 1, Concat, [1]]                                        # 30
+  - [-1, 2, C3k2, [256, False]]                                       # 31 (P3/8)
+  - [-1, 1, Conv, [256, 3, 2]]                                       # 32
+  - [[-1, 28], 1, Concat, [1]]                                        # 33
+  - [-1, 2, C3k2, [512, False]]                                       # 34 (P4/16)
+  - [-1, 1, Conv, [512, 3, 2]]                                       # 35
+  - [[-1, 25], 1, Concat, [1]]                                        # 36
+  - [-1, 2, C3k2, [1024, True, 0.5, True]]                          # 37 (P5/32)
+  - [[31, 34, 37], 1, DecoupledHead, [nc, 256]]                       # 38 ← DecoupledHead

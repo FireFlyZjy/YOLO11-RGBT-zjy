@@ -32,5 +32,31 @@ from .conv.DEConv import *
 # 2026-05-26 模块 (CMFADet - ATAH检测头)
 from .head import *
 
+# 2026-05-27 模块 (yolo-improve 新增)
+from .conv.CoordConv import *
+from .conv.PConv import *
+from .conv.TridentBlock import *
+from .conv.StarBlock import *
+from .dynamic.DynamicConv import *
+from .context.ContextAgg import *
+from .context.EVC import *
+
+# 2026-05-27 颈部模块 (neck)
+from .neck import *
+
+# 2026-05-27 Mamba/SSM模块 (EfficientViM, MobileMamba)
+from .mamba import *
+
+# 2026-05-27 频域模块 (FDConv, vHeat, TOST, FADC, DarkIR, SFSConv)
+from .frequency.FDConv import *
+from .frequency.vHeat import *
+from .frequency.TOST import *
+from .frequency.FADC import *
+from .frequency.DarkIR import *
+from .frequency.SFSConv import *
+
+# 2026-05-27 损失工具 (NWD, Soft-NMS, 独立使用不修改 ultralytics 源码)
+from .loss import *
+
 # YOLO 包装器 (必须在独立模块之后导入)
 from .common import *

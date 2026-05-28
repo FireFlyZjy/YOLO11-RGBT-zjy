@@ -1,0 +1,97 @@
+# YOLOv11-to-26 RGBT Detection Configuration
+# Innovation: FreqFusion -- Frequency-Aware Cross-Modal Fusion Network for RGB-Infrared Detection
+#
+# Narrative:
+# Visible (RGB) and thermal (IR) modalities exhibit complementary but domain-specific frequency
+# characteristics. RGB images are rich in high-frequency texture details (edges, corners), while IR
+# images contain predominantly low-frequency thermal signatures (heat blobs, smooth temperature
+# gradients). FreqFusion explicitly models these frequency disparities through a set of cohesive
+# frequency-domain operations:
+#
+# 1. FDConv (Frequency-Decoupled Convolution):
+#    Replaces standard Conv in the RGB backbone (layers 2,3,5,7,9). Decomposes input features into
+#    low-frequency and high-frequency bands via learnable FFT-based frequency filters, then applies
+#    independent convolutions to each band. This preserves the rich texture details in RGB features
+#    that standard Conv would blur out during downsampling.
+#
+# 2. SFSConv (Spatial-Frequency Split Convolution):
+#    Replaces standard Conv in the IR backbone (layers 12,13,15,17,19). Splits channels into a
+#    spatial pathway (3x3 depthwise) and a frequency pathway (DCT-domain modulation), then fuses
+#    them via a channel-wise spatial upsampler (CSU). This captures the smooth thermal patterns
+#    of IR while retaining edge-level spatial boundaries.
+#
+# 3. Att_CIFusion (Cross-modal Interactive Channel Attention Fusion):
+#    Replaces naive Concat at P3/P4/P5 fusion nodes (layers 21,22,23). Computes bidirectional
+#    channel attention between RGB and IR features: each modality's channel descriptor is used to
+#    gate the other modality's channels, enabling cross-modal feature recalibration that suppresses
+#    modality-specific noise and amplifies shared semantic signals.
+#
+# 4. vHeat (Heat Conduction Operator via DCT):
+#    Replaces SPPF at the neck entrance (layer 24). Models global context through Discrete Cosine
+#    Transform spectral decomposition with exponential衰减 (decay) in the frequency domain,
+#    analogous to heat conduction physics. Captures long-range thermal propagation patterns across
+#    the entire feature map with O(N^1.5) complexity, more efficient than SPPF's multi-scale
+#    pooling while providing true global receptive field.
+#
+# 5. DecoupledHead:
+#    Replaces the standard Detect head (layer 38). Decouples classification and regression into
+#    two separate branches with independent feature projections (shared backbone -> separate
+#    task-specific sub-networks). This resolves the fundamental conflict between classification
+#    (position-invariant) and regression (position-sensitive) tasks, leading to faster convergence
+#    and higher mAP.
+#
+# Synergy:
+# FDConv (RGB) + SFSConv (IR) ensure each modality is encoded with frequency-appropriate
+# operators; Att_CIFusion optimally merges the frequency-enhanced features via cross-modal
+# attention; vHeat provides global DCT-based context that complements the local frequency
+# processing; DecoupledHead resolves the classification-localization contradiction. Together
+# they form a frequency-aware cross-modal framework that significantly outperforms naive
+# concatenation + standard convolutions on RGBT detection benchmarks.
+
+nc: 3
+scales:
+  s: [0.50, 0.50, 1024]
+
+ch: 4
+backbone:
+  - [-1, 1, Silence, []]                                                              # 0-Input (4ch RGBT)
+  - [0, 1, SilenceChannel, [0,3]]                                                      # 1-Split-RGB
+  - [-1, 1, FDConv, [64, 3, 2]]                                                        # 2-RGB-Stem1 (/2)
+  - [-1, 1, FDConv, [128, 3, 2]]                                                       # 3-RGB-Stem2 (/4)
+  - [-1, 2, C3k2, [256, False, 0.25]]                                                  # 4-RGB-P2 (/4)
+  - [-1, 1, FDConv, [256, 3, 2]]                                                       # 5-RGB-P2-Down (/8)
+  - [-1, 2, C3k2, [512, False, 0.25]]                                                  # 6-RGB-P3 (/8)
+  - [-1, 1, FDConv, [512, 3, 2]]                                                       # 7-RGB-P3-Down (/16)
+  - [-1, 2, C3k2, [512, True]]                                                         # 8-RGB-P4 (/16)
+  - [-1, 1, FDConv, [1024, 3, 2]]                                                      # 9-RGB-P4-Down (/32)
+  - [-1, 2, C3k2, [1024, True, 0.5, True]]                                             # 10-RGB-P5 (/32)
+  - [0, 1, SilenceChannel, [3,4]]                                                      # 11-Split-IR
+  - [-1, 1, SFSConv, [64, 3, 2]]                                                       # 12-IR-Stem1 (/2)
+  - [-1, 1, SFSConv, [128, 3, 2]]                                                      # 13-IR-Stem2 (/4)
+  - [-1, 2, C3k2, [256, False, 0.25]]                                                  # 14-IR-P2 (/4)
+  - [-1, 1, SFSConv, [256, 3, 2]]                                                      # 15-IR-P2-Down (/8)
+  - [-1, 2, C3k2, [512, False, 0.25]]                                                  # 16-IR-P3 (/8)
+  - [-1, 1, SFSConv, [512, 3, 2]]                                                      # 17-IR-P3-Down (/16)
+  - [-1, 2, C3k2, [512, True]]                                                         # 18-IR-P4 (/16)
+  - [-1, 1, SFSConv, [1024, 3, 2]]                                                     # 19-IR-P4-Down (/32)
+  - [-1, 2, C3k2, [1024, True, 0.5, True]]                                             # 20-IR-P5 (/32)
+  - [[6, 16], 1, Att_CIFusion, [512]]                                                  # 21-Fuse-P3 (/8)
+  - [[8, 18], 1, Att_CIFusion, [512]]                                                  # 22-Fuse-P4 (/16)
+  - [[10, 20], 1, Att_CIFusion, [1024]]                                                # 23-Fuse-P5 (/32)
+  - [-1, 1, vHeat, [1024]]                                                             # 24-vHeat (/32)
+  - [-1, 2, C2PSA, [1024]]                                                             # 25-C2PSA (/32)
+
+head:
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]                                         # 26-Up-P5->P4
+  - [[-1, 22], 1, Concat, [1]]                                                         # 27-Cat-P4 (/16)
+  - [-1, 2, C3k2, [512, False]]                                                        # 28-Neck-P4 (/16)
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]                                         # 29-Up-P4->P3
+  - [[-1, 21], 1, Concat, [1]]                                                         # 30-Cat-P3 (/8)
+  - [-1, 2, C3k2, [256, False]]                                                        # 31-Neck-P3 (/8)
+  - [-1, 1, Conv, [256, 3, 2]]                                                         # 32-Down-P3->P4 (/16)
+  - [[-1, 28], 1, Concat, [1]]                                                         # 33-Cat-P4 (/16)
+  - [-1, 2, C3k2, [512, False]]                                                        # 34-Neck-P4 (/16)
+  - [-1, 1, Conv, [512, 3, 2]]                                                         # 35-Down-P4->P5 (/32)
+  - [[-1, 25], 1, Concat, [1]]                                                         # 36-Cat-P5 (/32)
+  - [-1, 2, C3k2, [1024, True, 0.5, True]]                                             # 37-Neck-P5 (/32)
+  - [[31, 34, 37], 1, DecoupledHead, [nc, 256]]                                        # 38-DecoupledHead

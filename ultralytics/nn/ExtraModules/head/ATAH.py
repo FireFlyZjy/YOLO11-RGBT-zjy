@@ -48,7 +48,7 @@ class TaskawareFeatureModulator(nn.Module):
     def forward(self, x, avg_feat):
         b, c, h, w = x.shape
         y = self.la_conv2(F.relu(self.la_conv1(avg_feat)))
-        y = y.sigmoid().unsqueeze(-1)
+        y = y.sigmoid()  # 保持4D, unsqueeze会导致广播出5D
         feat_list = [x[:, i * self.feat_channels:(i + 1) * self.feat_channels] * y[:, i:i + 1]
                      for i in range(self.stacked_convs)]
         return torch.cat(feat_list, dim=1)
@@ -129,6 +129,10 @@ class Detect_ATAH(nn.Module):
         self.cls_branch = TaskawareFeatureModulator(hidc // 2, 2, 16)
         self.reg_branch = TaskawareFeatureModulator(hidc // 2, 2, 16)
 
+        # 通道缩减: TaskawareFeatureModulator输出hidc, 下游(DyDCNV2/cv2/cv3)需要hidc//2
+        self.cls_reduce = nn.Conv2d(hidc, hidc // 2, 1, bias=False)
+        self.reg_reduce = nn.Conv2d(hidc, hidc // 2, 1, bias=False)
+
         # 回归对齐: 可变形卷积 + 空间偏移
         self.DyDCNV2 = DyDCNv2(hidc // 2, hidc // 2)
         self.spatial_conv_offset = nn.Conv2d(hidc, 3 * 3 * 3, 3, padding=1)
@@ -156,8 +160,8 @@ class Detect_ATAH(nn.Module):
 
             # 任务感知特征调制
             avg_feat = F.adaptive_avg_pool2d(feat, (1, 1))
-            cls_feat = self.cls_branch(feat, avg_feat)
-            reg_feat = self.reg_branch(feat, avg_feat)
+            cls_feat = self.cls_reduce(self.cls_branch(feat, avg_feat))
+            reg_feat = self.reg_reduce(self.reg_branch(feat, avg_feat))
 
             # 回归对齐: 可变形卷积空间校正
             offset_and_mask = self.spatial_conv_offset(feat)

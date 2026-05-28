@@ -293,7 +293,7 @@ class BaseModel(torch.nn.Module):
         """
         self = super()._apply(fn)
         m = self.model[-1]  # Detect()
-        if isinstance(m, DETECT_CLASS) or isinstance(m, Detect_ATAH):  # includes all Detect subclasses like Segment, Pose, OBB, WorldDetect
+        if isinstance(m, DETECT_CLASS) or isinstance(m, (Detect_ATAH, DecoupledHead)):  # includes all Detect subclasses like Segment, Pose, OBB, WorldDetect
             m.stride = fn(m.stride)
             m.anchors = fn(m.anchors)
             m.strides = fn(m.strides)
@@ -359,7 +359,7 @@ class DetectionModel(BaseModel):
 
         # Build strides
         m = self.model[-1]  # Detect()
-        if isinstance(m, (DETECT_CLASS + SEGMENT_CLASS + POSE_CLASS + OBB_CLASS + V10_DETECT_CLASS)) or isinstance(m, Detect_ATAH):  # includes all Detect subclasses like Segment, Pose, OBB, WorldDetect
+        if isinstance(m, (DETECT_CLASS + SEGMENT_CLASS + POSE_CLASS + OBB_CLASS + V10_DETECT_CLASS)) or isinstance(m, (Detect_ATAH, DecoupledHead)):  # includes all Detect subclasses like Segment, Pose, OBB, WorldDetect
             # s = 256  # 2x min stride
             s = 256  # 2x min stride
             m.inplace = self.inplace
@@ -1078,6 +1078,38 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             # 2026-05-19 新增模块 (来自 ICAFusion)
             # ================================================================
             Att_ICAFusion, # ICAFusion: 迭代交叉注意力Transformer融合, 跨模态特征交互
+            # ================================================================
+            # 2026-05-27 新增模块 (yolo-improve + module-info + mamba)
+            # ================================================================
+            # --- conv/ 卷积类 ---
+            Conv_Coord,  # CoordConv: 附加x/y坐标通道, 空间对齐双模态
+            PConv,       # PConv: 部分卷积(仅1/4通道3×3), 其余恒等映射, 极轻量
+            Faster_Block,# Faster_Block: PConv+MLP组合, 轻量级C2f瓶颈替代
+            C3_RFEM,     # C3_RFEM: TridentBlock共享权重多空洞率(1,2,3), 零额外参数多尺度
+            StarBlock,   # StarBlock: 星操作(element-wise乘法), 隐式高维特征交互, 零成本
+            # --- dynamic/ 动态卷积 ---
+            Dynamic_conv2d, # DynamicConv: K=4专家卷积核+温度softmax路由, 模态自适应
+            # --- context/ 上下文 ---
+            EVCBlock,    # EVC: 可学习视觉码本(LVC)+轻量MLP, 双模态原型学习
+            ContextAggregation, # ContextAgg: 非局部全局上下文聚合, 轻量~8k参数
+            # --- neck/ 颈部 ---
+            CARAFE,      # CARAFE: 内容感知上采样, 学习重组核替代最近邻
+            CARAFE_Upsample, # CARAFE_Upsample: 自动推断通道的包装器
+            ASF_fusion,  # ASF: Zoom_cat跨尺度拼接+attention_model双重注意力
+            Zoom_cat,    # Zoom_cat: 3尺度自适应池化/插值拼接
+            ScalSeq,     # ScalSeq: 3D卷积跨尺度金字塔交互 (yolo-improve)
+            attention_model, # attention_model: ECA通道+坐标局部双重注意力
+            # --- mamba/ SSM序列建模 ---
+            EfficientViM_Block, # EfficientViM: 单头隐藏状态混合SSM, O(LD²)→O(ND²+LND)
+            WTE_Mamba,   # WTE_Mamba: Haar小波分解+SSM每频带+多核DWConv
+            # --- frequency/ 频域模块 ---
+            FDConv,      # FDConv: 频域解耦卷积, FFT频带分解+独立调制
+            vHeat,       # vHeat: 热传导算子, DCT域exp衰减全局建模 O(N^1.5)
+            TOST,        # TOST: Token统计自注意力, 二阶矩统计量 O(n)线性注意力
+            FADC,        # FADC: 频率自适应膨胀卷积, 高频小膨胀+低频大膨胀
+            EBlock,      # EBlock: FFT幅度调制照明增强, 保留相位增强幅度
+            DBlock,      # DBlock: 多扩张空间注意力去模糊
+            SFSConv,     # SFS-Conv: 空间/频率分流+CSU无参数自适应融合
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments
@@ -1118,11 +1150,12 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 with contextlib.suppress(ValueError):
                     args[j] = locals()[a] if a in locals() else ast.literal_eval(a)
         n = n_ = max(round(n * depth), 1) if n > 1 else n  # depth gain
-        if m in (Att_ScalSeq, Att_AFF, Att_iAFF, Att_CIFusion, Att_ICAFusion):  # 多输入模块(from为列表), 在base_modules之前处理
+        if m in (Att_ScalSeq, Att_AFF, Att_iAFF, Att_CIFusion, Att_ICAFusion,
+                 ASF_fusion, Zoom_cat, ScalSeq, attention_model):  # 多输入模块(from为列表), 在base_modules之前处理
             c1 = [ch[x] for x in f]
             c2 = args[0]
             args = [c1, c2, *args[1:]]
-        elif m is Detect_ATAH:                                               # ATAH检测头 (2026-05-26)
+        elif m in (Detect_ATAH, DecoupledHead):                              # 检测头 (2026-05-26/27)
             args.append([ch[x] for x in f])
         elif m in base_modules :
             c1, c2 = ch[f], args[0]
