@@ -44,11 +44,11 @@ class _DummyEMA:
 
 # --- 模型配置 ---
 # 模型 YAML 配置文件路径
-DEFAULT_MODEL_YAML = "ultralytics/cfg/models/26-RGBT/2026-05-19/yolo26-RGBT-midfusion-ICAFusion.yaml"
+DEFAULT_MODEL_YAML = "ultralytics/cfg/models/26-RGBT/2026-06-04/frequency/yolo26-RGBT-midfusion-vHeat_Block.yaml"
 
 # --- 训练结果保存 ---
 DEFAULT_PROJECT = "runs/FLIR/26dual-test"
-DEFAULT_NAME = "yolo26s-RGBT-midfusion-ICAFusion"
+DEFAULT_NAME = "yolo26s-RGBT-midfusion-vHeat_Block"
 
 # --- 数据集 ---
 DEFAULT_DATA = "ultralytics/cfg/datasets/flir.yaml"

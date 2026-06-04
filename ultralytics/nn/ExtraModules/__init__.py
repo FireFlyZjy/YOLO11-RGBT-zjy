@@ -21,7 +21,11 @@ from .attention.ELA import *
 from .attention.AIFI import *
 from .attention.ULSAM import *
 from .attention.StripPool import *
+
+# 2026-05-28 scSE 模块 (Spatial + Channel SE)
+from .attention.scSE import *
 from .fusion.AFF import *
+from .fusion.vHeat_Fusion import *
 
 # 2026-05-19 模块 (CMFADet)
 from .attention.SFEM import *
@@ -38,6 +42,8 @@ from .conv.PConv import *
 from .conv.TridentBlock import *
 from .conv.StarBlock import *
 from .dynamic.DynamicConv import *
+from .dynamic.DGC import *
+from .dynamic.RepMLP import *
 from .context.ContextAgg import *
 from .context.EVC import *
 
@@ -54,6 +60,20 @@ from .frequency.TOST import *
 from .frequency.FADC import *
 from .frequency.DarkIR import *
 from .frequency.SFSConv import *
+from .frequency.vHeat_Block import *
+
+# 2026-05-28 FPT: Feature Pyramid Transformer — 自注意力/跨层接地/渲染融合
+from .attention.FPT import *
+
+# 2026-05-28 DANet: Dual Attention Network — 位置注意力+通道注意力
+from .attention.DANet import *
+
+# 2026-05-28 BAM: Bottleneck Attention Module — 通道+空洞空间注意力
+from .attention.BAM import *
+
+# 2026-05-28 Conv增强模块 (DOConv, RFB)
+from .conv.DOConv import *
+from .conv.RFB import *
 
 # 2026-05-27 损失工具 (NWD, Soft-NMS, 独立使用不修改 ultralytics 源码)
 from .loss import *

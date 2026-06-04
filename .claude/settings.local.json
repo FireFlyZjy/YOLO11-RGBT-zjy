@@ -4,7 +4,13 @@
       "Bash(/d/Anaconda/envs/torch310/python.exe -c ' *)",
       "Bash(python -c ' *)",
       "Bash(mkdir -p \"C:/Users/Patrick/Desktop/DeepLearning/Code/YOLOv11to26-RGBT/ultralytics/cfg/models/26-RGBT/2026-05-27-innovations\")",
-      "Bash(mkdir -p \"C:/Users/Patrick/Desktop/DeepLearning/Code/YOLOv11to26-RGBT/docs\")"
+      "Bash(mkdir -p \"C:/Users/Patrick/Desktop/DeepLearning/Code/YOLOv11to26-RGBT/docs\")",
+      "Bash(pip install *)",
+      "Read(//c/Users/Patrick/Desktop/DeepLearning/Code/**)",
+      "Read(//c/Users/Patrick/Desktop/**)",
+      "Bash(python -c \"from ultralytics.nn.ExtraModules.frequency.vHeat_Block import vHeat_Block; print\\('vHeat_Block import OK'\\)\")",
+      "Bash(python -c \"from ultralytics.nn.ExtraModules.fusion.vHeat_Fusion import vHeat_Fusion; print\\('vHeat_Fusion import OK'\\)\")",
+      "Bash(D:/Anaconda/envs/torch310/python.exe -c ' *)"
     ]
   }
 }

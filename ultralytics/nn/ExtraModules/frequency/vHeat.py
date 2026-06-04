@@ -59,17 +59,17 @@ class vHeat(nn.Module):
         self.proj_out = nn.Conv2d(c2, c2, 1, bias=False)
         self.norm = nn.BatchNorm2d(c2)
 
-        # 缓存 DCT 变换矩阵 (避免每张图都重新创建)
-        self.register_buffer("_dct_mat_h", None)
-        self.register_buffer("_dct_mat_w", None)
+        # 缓存 DCT 变换矩阵 (普通 dict, 兼容 EMA)
+        self._dct_cache = {}
 
     def _ensure_dct_mat(self, H, W, device):
         """确保 DCT 变换矩阵已预计算 (矩阵乘法法, 复杂度 O(N^1.5))."""
-        if self._dct_mat_h is None or self._dct_mat_h.shape[0] != H:
+        key = (H, W)
+        cached = self._dct_cache.get(key)
+        if cached is None or cached[0].device != device:
             mat_h = self._create_dct_matrix(H)
             mat_w = self._create_dct_matrix(W)
-            self.register_buffer("_dct_mat_h", mat_h.to(device))
-            self.register_buffer("_dct_mat_w", mat_w.to(device))
+            self._dct_cache[key] = (mat_h.to(device), mat_w.to(device))
 
     @staticmethod
     def _create_dct_matrix(n):
@@ -94,8 +94,7 @@ class vHeat(nn.Module):
 
         # ---------- 预计算 DCT 矩阵 ----------
         self._ensure_dct_mat(H, W, x.device)
-        M_H = self._dct_mat_h  # (H, H)
-        M_W = self._dct_mat_w  # (W, W)
+        M_H, M_W = self._dct_cache[(H, W)]  # (H, H), (W, W)
 
         # ---------- 2D DCT ----------
         # DCT = M_H @ x @ M_W^T

@@ -1110,6 +1110,31 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             EBlock,      # EBlock: FFT幅度调制照明增强, 保留相位增强幅度
             DBlock,      # DBlock: 多扩张空间注意力去模糊
             SFSConv,     # SFS-Conv: 空间/频率分流+CSU无参数自适应融合
+            # --- frequency/ 频域模块 (续) ---
+            vHeat_Block, # vHeat_Block: 完整热传导块(HCO+MLP+DropPath+LayerScale), 替换SPPF/C2PSA
+            # --- fusion/ 融合模块 ---
+            vHeat_Fusion, # vHeat_Fusion: 跨模态热传导融合(DCT域RGB+IR自适应频率门控)
+            # ================================================================
+            # 2026-05-28 新增模块 (来自 SimpleCVReproduction-master)
+            # ================================================================
+            # --- conv/ 卷积增强 ---
+            Conv_DO,     # DOConv: 过参数化卷积(训练D⊗W, 推理融合零开销)
+            BasicRFB,    # BasicRFB: 多分支膨胀卷积感受野增强, 小目标友好
+            BasicRFB_small, # BasicRFB_small: 4分支精细版
+            # --- dynamic/ 动态模块 ---
+            Conv_DGC,    # DGC: 动态分组卷积+通道门控, 模态自适应通道分配
+            RepMLP_Block, # RepMLP: 分块MLP+全局感知器, 跨模态特征交互
+            # --- attention/ 新增注意力 ---
+            Att_SelfTrans, # FPT: 层内自注意力Transformer, 多模式(dot/embed/gauss/concat)
+            Att_GroundTrans, # FPT: 跨层交叉注意力Grounding, RGB↔IR语义对齐
+            Att_RenderTrans, # FPT: 跨层渲染Transformer, 全局池化调制+空间对齐
+            Att_PAM,     # DANet: 位置注意力(O(N²)), 全局空间长程依赖
+            Att_CAM,     # DANet: 通道注意力(O(C²)), 模态特定通道增强
+            Att_DANet,   # DANet: 双注意力(PAM+CAM串行)
+            Att_BAM,     # BAM: 瓶颈注意力, 通道MLP+膨胀空间Conv, 优于CBAM
+            Att_cSE,     # scSE: 通道SE (轻量~2K参数)
+            Att_sSE,     # scSE: 空间SE (超轻~C参数)
+            Att_scSE,    # scSE: 通道+空间SE并行
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments
@@ -1151,7 +1176,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                     args[j] = locals()[a] if a in locals() else ast.literal_eval(a)
         n = n_ = max(round(n * depth), 1) if n > 1 else n  # depth gain
         if m in (Att_ScalSeq, Att_AFF, Att_iAFF, Att_CIFusion, Att_ICAFusion,
-                 ASF_fusion, Zoom_cat, ScalSeq, attention_model):  # 多输入模块(from为列表), 在base_modules之前处理
+                 ASF_fusion, Zoom_cat, ScalSeq, attention_model,
+                 Att_GroundTrans, Att_RenderTrans, vHeat_Fusion):  # 多输入模块(from为列表), 在base_modules之前处理
             c1 = [ch[x] for x in f]
             c2 = args[0]
             args = [c1, c2, *args[1:]]
