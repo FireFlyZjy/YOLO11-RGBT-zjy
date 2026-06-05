@@ -1,0 +1,4 @@
+Model,Precision,Recall,mAP50,mAP50-95,FLOPs(G),Params(M),FPS,Preprocess(ms),Inference(ms),Postprocess(ms),Total(ms),use_simotm,Channels,Batch,Workers,Device,imgsz,Data,Project,Name
+runs\FLIR\26dual-test\yolo26n-ASPP-V1-RGBT-midfusion\weights\best.pt,0.8289,0.7243,0.8227,0.4561,21.17,6.06,63.84,0.52,13.77,1.37,15.66,RGBT,4,4,0,0,640,ultralytics/cfg/datasets/flir.yaml,runs/FLIR/val,test
+runs\FLIR\26dual-test\yolo26n-ASPP-V1-RGBT-midfusion\weights\best.pt,0.8289,0.7243,0.8227,0.4561,21.17,6.06,63.77,0.52,13.85,1.30,15.68,RGBT,4,4,0,0,640,ultralytics/cfg/datasets/flir.yaml,runs/FLIR/val,test
+yolo26n-ASPP-V1-RGBT-midfusion,0.8289,0.7243,0.8227,0.4561,21.17,6.06,61.06,0.53,14.44,1.41,16.38,RGBT,4,4,0,0,640,ultralytics/cfg/datasets/flir.yaml,runs/FLIR/val,test
