@@ -62,14 +62,15 @@ class vHeat(nn.Module):
         # 缓存 DCT 变换矩阵 (普通 dict, 兼容 EMA)
         self._dct_cache = {}
 
-    def _ensure_dct_mat(self, H, W, device):
-        """确保 DCT 变换矩阵已预计算 (矩阵乘法法, 复杂度 O(N^1.5))."""
-        key = (H, W)
-        cached = self._dct_cache.get(key)
-        if cached is None or cached[0].device != device:
-            mat_h = self._create_dct_matrix(H)
-            mat_w = self._create_dct_matrix(W)
-            self._dct_cache[key] = (mat_h.to(device), mat_w.to(device))
+    def _ensure_dct_mat(self, H, W, device, dtype):
+        """确保 DCT 变换矩阵已预计算 (矩阵乘法法, 复杂度 O(N^1.5)).
+        缓存的 key 包含 H,W,device,dtype, 防止 FP32/FP16 类型不匹配.
+        """
+        key = (H, W, device, dtype)
+        if key not in self._dct_cache:
+            mat_h = self._create_dct_matrix(H).to(device=device, dtype=dtype)
+            mat_w = self._create_dct_matrix(W).to(device=device, dtype=dtype)
+            self._dct_cache[key] = (mat_h, mat_w)
 
     @staticmethod
     def _create_dct_matrix(n):
@@ -93,8 +94,8 @@ class vHeat(nn.Module):
         x = self.proj_in(x)
 
         # ---------- 预计算 DCT 矩阵 ----------
-        self._ensure_dct_mat(H, W, x.device)
-        M_H, M_W = self._dct_cache[(H, W)]  # (H, H), (W, W)
+        self._ensure_dct_mat(H, W, x.device, x.dtype)
+        M_H, M_W = self._dct_cache[(H, W, x.device, x.dtype)]  # (H, H), (W, W)
 
         # ---------- 2D DCT ----------
         # DCT = M_H @ x @ M_W^T
@@ -105,8 +106,8 @@ class vHeat(nn.Module):
 
         # ---------- 频率网格 (归一化) ----------
         # wx ∈ [0, 1/W, 2/W, ..., (W-1)/W];  wy 同理
-        wx = torch.arange(W, device=x.device, dtype=torch.float32).view(1, 1, 1, W) / W
-        wy = torch.arange(H, device=x.device, dtype=torch.float32).view(1, 1, H, 1) / H
+        wx = torch.arange(W, device=x.device, dtype=x.dtype).view(1, 1, 1, W) / W
+        wy = torch.arange(H, device=x.device, dtype=x.dtype).view(1, 1, H, 1) / H
         freq_sq = wx ** 2 + wy ** 2  # (1, 1, H, W)
 
         # ---------- 自适应热扩散系数 k ----------

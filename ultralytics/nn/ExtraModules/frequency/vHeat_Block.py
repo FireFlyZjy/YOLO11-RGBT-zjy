@@ -127,14 +127,15 @@ class vHeat_Block(nn.Module):
         mat[1:] *= math.sqrt(2.0 / n)
         return mat
 
-    def _ensure_dct_mat(self, H, W, device):
-        """确保 DCT 矩阵已缓存 (普通 dict, 兼容 EMA)."""
-        key = (H, W)
-        cached = self._dct_cache.get(key)
-        if cached is None or cached[0].device != device:
+    def _ensure_dct_mat(self, H, W, device, dtype):
+        """确保 DCT 矩阵已缓存 (普通 dict, 兼容 EMA).
+        缓存的 key 包含 H,W,device,dtype, 防止 FP32/FP16 类型不匹配.
+        """
+        key = (H, W, device, dtype)
+        if key not in self._dct_cache:
             self._dct_cache[key] = (
-                self._create_dct_matrix(H).to(device),
-                self._create_dct_matrix(W).to(device),
+                self._create_dct_matrix(H).to(device=device, dtype=dtype),
+                self._create_dct_matrix(W).to(device=device, dtype=dtype),
             )
 
     # ╔══════════════════════════════════════════════╗
@@ -153,16 +154,16 @@ class vHeat_Block(nn.Module):
         hco_x, gate_z = gate.chunk(2, dim=1)  # each (B, C, H, W)
 
         # 3) 确保 DCT 矩阵
-        self._ensure_dct_mat(H, W, x.device)
-        M_H, M_W = self._dct_cache[(H, W)]  # (H, H), (W, W)
+        self._ensure_dct_mat(H, W, x.device, x.dtype)
+        M_H, M_W = self._dct_cache[(H, W, x.device, x.dtype)]  # (H, H), (W, W)
 
         # 4) 2D DCT:  M_H @ hco_x @ M_W^T
         dct_h = torch.einsum("ih,bchw->bciw", M_H, hco_x)  # (B, C, H, W)
         dct = torch.matmul(dct_h, M_W.T)                     # (B, C, H, W)
 
         # 5) 频率网格
-        wx = torch.arange(W, device=x.device, dtype=torch.float32).view(1, 1, 1, W) / W
-        wy = torch.arange(H, device=x.device, dtype=torch.float32).view(1, 1, H, 1) / H
+        wx = torch.arange(W, device=x.device, dtype=x.dtype).view(1, 1, 1, W) / W
+        wy = torch.arange(H, device=x.device, dtype=x.dtype).view(1, 1, H, 1) / H
         freq_sq = wx ** 2 + wy ** 2  # (1, 1, H, W)
 
         # 6) 自适应热扩散系数 k

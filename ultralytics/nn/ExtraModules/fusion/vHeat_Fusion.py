@@ -117,25 +117,26 @@ class vHeat_Fusion(nn.Module):
         mat[1:] *= math.sqrt(2.0 / n)
         return mat
 
-    def _ensure_dct_mat(self, H, W, device):
-        """确保 DCT 矩阵已缓存 (普通 dict, 兼容 EMA)."""
-        key = (H, W)
-        cached = self._dct_cache.get(key)
-        if cached is None or cached[0].device != device:
+    def _ensure_dct_mat(self, H, W, device, dtype):
+        """确保 DCT 矩阵已缓存 (普通 dict, 兼容 EMA).
+        缓存的 key 包含 H,W,device,dtype, 防止 FP32/FP16 类型不匹配.
+        """
+        key = (H, W, device, dtype)
+        if key not in self._dct_cache:
             self._dct_cache[key] = (
-                self._create_dct_matrix(H).to(device),
-                self._create_dct_matrix(W).to(device),
+                self._create_dct_matrix(H).to(device=device, dtype=dtype),
+                self._create_dct_matrix(W).to(device=device, dtype=dtype),
             )
 
     def _dct2d(self, x):
         """2D DCT: M_H @ x @ M_W^T."""
-        M_H, M_W = self._dct_cache[(x.shape[2], x.shape[3])]
+        M_H, M_W = self._dct_cache[(x.shape[2], x.shape[3], x.device, x.dtype)]
         dct_h = torch.einsum("ih,bchw->bciw", M_H, x)
         return torch.matmul(dct_h, M_W.T)
 
     def _idct2d(self, x):
         """2D IDCT: M_H^T @ x @ M_W."""
-        M_H, M_W = self._dct_cache[(x.shape[2], x.shape[3])]
+        M_H, M_W = self._dct_cache[(x.shape[2], x.shape[3], x.device, x.dtype)]
         idct_h = torch.einsum("ih,bciw->bchw", M_H, x)
         return torch.matmul(idct_h, M_W)
 
@@ -165,15 +166,15 @@ class vHeat_Fusion(nn.Module):
         B, C, H, W = rgb.shape
 
         # ── 准备 DCT 矩阵 ──
-        self._ensure_dct_mat(H, W, rgb.device)
+        self._ensure_dct_mat(H, W, rgb.device, rgb.dtype)
 
         # ── Step 1: 空域 → 频域 (DCT) ──
         dct_rgb = self._dct2d(rgb)  # (B, C, H, W)
         dct_ir = self._dct2d(ir)    # (B, C, H, W)
 
         # ── Step 2: 频率网格 ──
-        wx = torch.arange(W, device=rgb.device, dtype=torch.float32).view(1, 1, 1, W) / W
-        wy = torch.arange(H, device=rgb.device, dtype=torch.float32).view(1, 1, H, 1) / H
+        wx = torch.arange(W, device=rgb.device, dtype=rgb.dtype).view(1, 1, 1, W) / W
+        wy = torch.arange(H, device=rgb.device, dtype=rgb.dtype).view(1, 1, H, 1) / H
         freq_sq = wx ** 2 + wy ** 2  # (1, 1, H, W)
 
         # ── Step 3: 模态特定热扩散系数 ──
