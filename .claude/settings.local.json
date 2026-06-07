@@ -10,7 +10,11 @@
       "Read(//c/Users/Patrick/Desktop/**)",
       "Bash(python -c \"from ultralytics.nn.ExtraModules.frequency.vHeat_Block import vHeat_Block; print\\('vHeat_Block import OK'\\)\")",
       "Bash(python -c \"from ultralytics.nn.ExtraModules.fusion.vHeat_Fusion import vHeat_Fusion; print\\('vHeat_Fusion import OK'\\)\")",
-      "Bash(D:/Anaconda/envs/torch310/python.exe -c ' *)"
+      "Bash(D:/Anaconda/envs/torch310/python.exe -c ' *)",
+      "Bash(\"D:/Anaconda/envs/torch310/python.exe\" batch_val.py --search_dir runs/test --filter vHeat --device 0 --batch 2)",
+      "Bash(\"D:/Anaconda/envs/torch310/python.exe\" batch_val.py --search_dir runs/test --filter vHeat --device 0 --batch 4 --csv val_results.csv)",
+      "Bash(\"D:/Anaconda/envs/torch310/python.exe\" batch_val.py --search_dir \"runs/FLIR/26dual-test\" --filter vHeat --device 0 --batch 4 --csv val_results.csv)",
+      "Bash(\"D:/Anaconda/envs/torch310/python.exe\" batch_val.py --search_dir \"runs/FLIR/26dual-test\" --device 0 --batch 4 --csv val_results.csv)"
     ]
   }
 }

@@ -59,8 +59,14 @@ class vHeat(nn.Module):
         self.proj_out = nn.Conv2d(c2, c2, 1, bias=False)
         self.norm = nn.BatchNorm2d(c2)
 
-        # 缓存 DCT 变换矩阵 (普通 dict, 兼容 EMA)
+        # 缓存 DCT 变换矩阵 (普通 dict, 兼容 EMA, 不参与序列化)
         self._dct_cache = {}
+
+    def __getstate__(self):
+        """序列化时排除 _dct_cache, 避免 device remap 不一致."""
+        state = self.__dict__.copy()
+        state['_dct_cache'] = {}
+        return state
 
     def _ensure_dct_mat(self, H, W, device, dtype):
         """确保 DCT 变换矩阵已预计算 (矩阵乘法法, 复杂度 O(N^1.5)).

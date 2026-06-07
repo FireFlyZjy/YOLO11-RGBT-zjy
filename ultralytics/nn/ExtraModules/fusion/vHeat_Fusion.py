@@ -100,8 +100,14 @@ class vHeat_Fusion(nn.Module):
         self.norm_out = nn.BatchNorm2d(c2)
         self.act_out = nn.SiLU(inplace=True)
 
-        # ── DCT 矩阵缓存 (普通 dict, 不使用 register_buffer 以兼容 EMA) ──
+        # ── DCT 矩阵缓存 (普通 dict, 兼容 EMA, 不参与序列化) ──
         self._dct_cache = {}
+
+    def __getstate__(self):
+        """序列化时排除 _dct_cache, 避免 device remap 不一致."""
+        state = self.__dict__.copy()
+        state['_dct_cache'] = {}
+        return state
 
     # ╔══════════════════════════════════════════════╗
     # ║         DCT / IDCT 工具方法                  ║
