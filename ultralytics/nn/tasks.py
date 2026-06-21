@@ -1119,6 +1119,10 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             # ================================================================
             FCMMFusion,    # FCMMFusion: FCM双分支交叉门控融合, vis空间门控+ir通道门控互补增强
             FCMBlockFusion, # FCMBlockFusion: FCMMFusion+轻量DWConv refine, 更稳定
+            DMAF,          # DMAF: 差分模态感知融合, 差分图GAP+tanh交叉加权(来自EI2Det)
+            QualityWeightedFusion, # QWF: 天气/质量感知自适应加权融合(IWM改造, 来自EI2Det)
+            EdgeBlendFusion, # EBF: 边缘感知融合, Sobel边缘检测+可学习alpha混合(EFM改造, 来自EI2Det)
+            EI2Fusion,     # EI2Fusion: 全流程融合=质量加权+边缘混合(TransformerFusionBlock改造, 来自EI2Det)
             # ================================================================
             # 2026-05-28 新增模块 (来自 SimpleCVReproduction-master)
             # ================================================================
@@ -1183,7 +1187,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         if m in (Att_ScalSeq, Att_AFF, Att_iAFF, Att_CIFusion, Att_ICAFusion,
                  ASF_fusion, Zoom_cat, ScalSeq, attention_model,
                  Att_GroundTrans, Att_RenderTrans, vHeat_Fusion,
-                 FCMMFusion, FCMBlockFusion):  # 多输入模块(from为列表), 在base_modules之前处理
+                 FCMMFusion, FCMBlockFusion,
+                 DMAF, QualityWeightedFusion, EdgeBlendFusion, EI2Fusion):  # 多输入模块(from为列表), 在base_modules之前处理
             c1 = [ch[x] for x in f]
             c2 = args[0]
             args = [c1, c2, *args[1:]]

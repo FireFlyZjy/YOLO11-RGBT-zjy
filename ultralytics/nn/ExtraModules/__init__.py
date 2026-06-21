@@ -27,6 +27,8 @@ from .attention.scSE import *
 from .fusion.AFF import *
 from .fusion.vHeat_Fusion import *
 from .fusion.FCMMFusion import *
+from .fusion.DMAF import *
+from .fusion.EI2Fusion import *
 
 # 2026-05-19 模块 (CMFADet)
 from .attention.SFEM import *
