@@ -1,9 +1,0 @@
-torch
-torchvision
-torchaudio
-packaging
-timm
-yacs 
-termcolor 
-tensorboardX
-fvcore

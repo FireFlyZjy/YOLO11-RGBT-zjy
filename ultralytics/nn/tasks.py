@@ -1115,6 +1115,11 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             # --- fusion/ 融合模块 ---
             vHeat_Fusion, # vHeat_Fusion: 跨模态热传导融合(DCT域RGB+IR自适应频率门控)
             # ================================================================
+            # 2026-06-20 新增模块 (来自 FCM-main, 跨分支交叉门控融合)
+            # ================================================================
+            FCMMFusion,    # FCMMFusion: FCM双分支交叉门控融合, vis空间门控+ir通道门控互补增强
+            FCMBlockFusion, # FCMBlockFusion: FCMMFusion+轻量DWConv refine, 更稳定
+            # ================================================================
             # 2026-05-28 新增模块 (来自 SimpleCVReproduction-master)
             # ================================================================
             # --- conv/ 卷积增强 ---
@@ -1177,7 +1182,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         n = n_ = max(round(n * depth), 1) if n > 1 else n  # depth gain
         if m in (Att_ScalSeq, Att_AFF, Att_iAFF, Att_CIFusion, Att_ICAFusion,
                  ASF_fusion, Zoom_cat, ScalSeq, attention_model,
-                 Att_GroundTrans, Att_RenderTrans, vHeat_Fusion):  # 多输入模块(from为列表), 在base_modules之前处理
+                 Att_GroundTrans, Att_RenderTrans, vHeat_Fusion,
+                 FCMMFusion, FCMBlockFusion):  # 多输入模块(from为列表), 在base_modules之前处理
             c1 = [ch[x] for x in f]
             c2 = args[0]
             args = [c1, c2, *args[1:]]
