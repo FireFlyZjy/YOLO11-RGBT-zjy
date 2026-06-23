@@ -1144,6 +1144,24 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             Att_cSE,     # scSE: 通道SE (轻量~2K参数)
             Att_sSE,     # scSE: 空间SE (超轻~C参数)
             Att_scSE,    # scSE: 通道+空间SE并行
+            # ================================================================
+            # 2026-06-21 新增模块 (来自 yoloair-main)
+            # ================================================================
+            # --- attention/ 新增注意力 ---
+            CrissCrossAttention, # CrissCross: 十字交叉注意力, 高效non-local近似
+            SOCA,          # SOCA: 二阶通道注意力(协方差池化), 高阶统计建模
+            SKAttention,   # SK: 选择性核注意力, 多尺度感受野自适应
+            NAMAttention,  # NAM: 极轻量BN统计通道注意力, ~512参数
+            S2Attention,   # S2: 空间移位注意力, 零参数空间建模
+            ACmix,         # ACmix: 混合注意力+卷积, 可学习加权
+            BoT3,          # BoT3: 瓶颈Transformer, 全局上下文建模
+            # --- conv/ 新增卷积 ---
+            GSConv,        # GSConv: Ghost Shuffle轻量卷积
+            VoVGSCSP,      # VoVGSCSP: CSP+GSBottleneck, 轻量CSP替代
+            Involution,    # Involution: 逆卷积算子, 位置感知动态核
+            # --- context/ 新增上下文 ---
+            SPPCSPC,       # SPPCSPC: CSP增强SPP, 多尺度上下文
+            SPPFCSPC,      # SPPFCSPC: CSP增强快速SPP
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments
@@ -1188,7 +1206,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                  ASF_fusion, Zoom_cat, ScalSeq, attention_model,
                  Att_GroundTrans, Att_RenderTrans, vHeat_Fusion,
                  FCMMFusion, FCMBlockFusion,
-                 DMAF, QualityWeightedFusion, EdgeBlendFusion, EI2Fusion):  # 多输入模块(from为列表), 在base_modules之前处理
+                 DMAF, QualityWeightedFusion, EdgeBlendFusion, EI2Fusion,
+                 ASFFFusion):  # 多输入模块(from为列表), 在base_modules之前处理
             c1 = [ch[x] for x in f]
             c2 = args[0]
             args = [c1, c2, *args[1:]]

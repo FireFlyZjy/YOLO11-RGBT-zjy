@@ -522,3 +522,21 @@ class Att_ICAFusion(nn.Module):
         else:
             a = b = self.proj_vis(x)
         return self.fusion([a, b])
+
+# ============================================================================
+# 2026-06-21 新增模块 (来自 yoloair-main)
+# ============================================================================
+
+from .conv.Involution import Involution as InvolutionCore
+
+# -------------------------------------------------- Involution (2026-06-21) ----------------------------------------------------
+class Involution(nn.Module):
+    """Involution: 逆卷积算子, 位置感知的动态卷积核
+    用法: [-1, 1, Involution, [c2, kernel_size, stride]]
+    """
+    def __init__(self, c1, c2, kernel_size=3, stride=1):
+        super().__init__()
+        self.proj = nn.Conv2d(c1, c2, 1, 1, 0, bias=False) if c1 != c2 else nn.Identity()
+        self.inv = InvolutionCore(c2, c2, kernel_size, stride)
+    def forward(self, x):
+        return self.inv(self.proj(x))

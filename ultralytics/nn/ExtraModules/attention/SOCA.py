@@ -1,0 +1,151 @@
+import torch
+import torch.nn as nn
+from torch.autograd import Function
+
+
+class Covpool(Function):
+    @staticmethod
+    def forward(ctx, input):
+        x = input
+        batchSize = x.data.shape[0]
+        dim = x.data.shape[1]
+        h = x.data.shape[2]
+        w = x.data.shape[3]
+        M = h * w
+        x = x.reshape(batchSize, dim, M)
+        I_hat = (-1. / M / M) * torch.ones(M, M, device=x.device) + (1. / M) * torch.eye(M, M, device=x.device)
+        I_hat = I_hat.view(1, M, M).repeat(batchSize, 1, 1).type(x.dtype)
+        y = x.bmm(I_hat).bmm(x.transpose(1, 2))
+        ctx.save_for_backward(input, I_hat)
+        return y
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        input, I_hat = ctx.saved_tensors
+        x = input
+        batchSize = x.data.shape[0]
+        dim = x.data.shape[1]
+        h = x.data.shape[2]
+        w = x.data.shape[3]
+        M = h * w
+        x = x.reshape(batchSize, dim, M)
+        grad_input = grad_output + grad_output.transpose(1, 2)
+        grad_input = grad_input.bmm(x).bmm(I_hat)
+        grad_input = grad_input.reshape(batchSize, dim, h, w)
+        return grad_input
+
+
+class Sqrtm(Function):
+    @staticmethod
+    def forward(ctx, input, iterN):
+        x = input
+        batchSize = x.data.shape[0]
+        dim = x.data.shape[1]
+        dtype = x.dtype
+        I3 = 3.0 * torch.eye(dim, dim, device=x.device).view(1, dim, dim).repeat(batchSize, 1, 1).type(dtype)
+        normA = (1.0 / 3.0) * x.mul(I3).sum(dim=1).sum(dim=1)
+        A = x.div(normA.view(batchSize, 1, 1).expand_as(x))
+        Y = torch.zeros(batchSize, iterN, dim, dim, requires_grad=False, device=x.device)
+        Z = torch.eye(dim, dim, device=x.device).view(1, dim, dim).repeat(batchSize, iterN, 1, 1)
+        if iterN < 2:
+            ZY = 0.5 * (I3 - A)
+            Y[:, 0, :, :] = A.bmm(ZY)
+        else:
+            ZY = 0.5 * (I3 - A)
+            Y[:, 0, :, :] = A.bmm(ZY)
+            Z[:, 0, :, :] = ZY
+            for i in range(1, iterN - 1):
+                ZY = 0.5 * (I3 - Z[:, i - 1, :, :].bmm(Y[:, i - 1, :, :]))
+                Y[:, i, :, :] = Y[:, i - 1, :, :].bmm(ZY)
+                Z[:, i, :, :] = ZY.bmm(Z[:, i - 1, :, :])
+            ZY = 0.5 * Y[:, iterN - 2, :, :].bmm(I3 - Z[:, iterN - 2, :, :].bmm(Y[:, iterN - 2, :, :]))
+        y = ZY * torch.sqrt(normA).view(batchSize, 1, 1).expand_as(x)
+        ctx.save_for_backward(input, A, ZY, normA, Y, Z)
+        ctx.iterN = iterN
+        return y
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        input, A, ZY, normA, Y, Z = ctx.saved_tensors
+        iterN = ctx.iterN
+        x = input
+        batchSize = x.data.shape[0]
+        dim = x.data.shape[1]
+        dtype = x.dtype
+        der_postCom = grad_output * torch.sqrt(normA).view(batchSize, 1, 1).expand_as(x)
+        der_postComAux = (grad_output * ZY).sum(dim=1).sum(dim=1).div(2 * torch.sqrt(normA))
+        I3 = 3.0 * torch.eye(dim, dim, device=x.device).view(1, dim, dim).repeat(batchSize, 1, 1).type(dtype)
+        if iterN < 2:
+            der_NSiter = 0.5 * (der_postCom.bmm(I3 - A) - A.bmm(der_postCom))
+        else:
+            dldY = 0.5 * (der_postCom.bmm(I3 - Y[:, iterN - 2, :, :].bmm(Z[:, iterN - 2, :, :])) -
+                          Z[:, iterN - 2, :, :].bmm(Y[:, iterN - 2, :, :]).bmm(der_postCom))
+            dldZ = -0.5 * Y[:, iterN - 2, :, :].bmm(der_postCom).bmm(Y[:, iterN - 2, :, :])
+            for i in range(iterN - 3, -1, -1):
+                YZ = I3 - Y[:, i, :, :].bmm(Z[:, i, :, :])
+                ZY = Z[:, i, :, :].bmm(Y[:, i, :, :])
+                dldY_ = 0.5 * (dldY.bmm(YZ) -
+                               Z[:, i, :, :].bmm(dldZ).bmm(Z[:, i, :, :]) -
+                               ZY.bmm(dldY))
+                dldZ_ = 0.5 * (YZ.bmm(dldZ) -
+                               Y[:, i, :, :].bmm(dldY).bmm(Y[:, i, :, :]) -
+                               dldZ.bmm(ZY))
+                dldY = dldY_
+                dldZ = dldZ_
+            der_NSiter = 0.5 * (dldY.bmm(I3 - A) - dldZ - A.bmm(dldY))
+        grad_input = der_NSiter.div(normA.view(batchSize, 1, 1).expand_as(x))
+        grad_aux = der_NSiter.mul(x).sum(dim=1).sum(dim=1)
+        for i in range(batchSize):
+            grad_input[i, :, :] += (der_postComAux[i] -
+                                    grad_aux[i] / (normA[i] * normA[i])) * torch.ones(dim, device=x.device).diag()
+        return grad_input, None
+
+
+def CovpoolLayer(var):
+    return Covpool.apply(var)
+
+
+def SqrtmLayer(var, iterN):
+    return Sqrtm.apply(var, iterN)
+
+
+class SOCA(nn.Module):
+    """SOCA: Second-Order Channel Attention, 二阶通道注意力(协方差池化)
+    机制: 全局协方差池化→矩阵平方根→1x1瓶颈→sigmoid通道加权
+    对RGBT的价值: 捕获RGB-T通道间高阶统计关系, 比SE/CBAM更丰富
+    来源: SAN (CVPR), yoloair-main
+    用法: [-1, 1, SOCA, [c2, reduction]]
+    """
+    def __init__(self, c1, c2, reduction=8):
+        super().__init__()
+        self.conv = nn.Conv2d(c1, c2, 1, 1, 0, bias=False) if c1 != c2 else nn.Identity()
+        c = c2
+        self.conv_du = nn.Sequential(
+            nn.Conv2d(c, c // reduction, 1, padding=0, bias=True),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(c // reduction, c, 1, padding=0, bias=True),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        x = self.conv(x)
+        batch_size, C, h, w = x.shape
+        h1, w1 = 1000, 1000
+        if h < h1 and w < w1:
+            x_sub = x
+        elif h < h1 and w > w1:
+            W = (w - w1) // 2
+            x_sub = x[:, :, :, W:(W + w1)]
+        elif w < w1 and h > h1:
+            H = (h - h1) // 2
+            x_sub = x[:, :, H:H + h1, :]
+        else:
+            H = (h - h1) // 2
+            W = (w - w1) // 2
+            x_sub = x[:, :, H:(H + h1), W:(W + w1)]
+        cov_mat = CovpoolLayer(x_sub)
+        cov_mat_sqrt = SqrtmLayer(cov_mat, 5)
+        cov_mat_sum = torch.mean(cov_mat_sqrt, 1)
+        cov_mat_sum = cov_mat_sum.view(batch_size, C, 1, 1)
+        y_cov = self.conv_du(cov_mat_sum)
+        return y_cov * x

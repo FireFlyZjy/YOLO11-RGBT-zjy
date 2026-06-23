@@ -81,5 +81,22 @@ from .conv.RFB import *
 # 2026-05-27 损失工具 (NWD, Soft-NMS, 独立使用不修改 ultralytics 源码)
 from .loss import *
 
+# 2026-06-21 新增模块 (来自 yoloair-main)
+# --- attention/ 新增注意力 ---
+from .attention.CrissCross import *   # CrissCrossAttention: 十字交叉注意力
+from .attention.SOCA import *         # SOCA: 二阶通道注意力(协方差池化)
+from .attention.SKAttention import *  # SKAttention: 选择性核注意力
+from .attention.NAM import *          # NAMAttention: 极轻量BN统计通道注意力
+from .attention.S2Attention import *  # S2Attention: 空间移位注意力
+from .attention.ACmix import *        # ACmix: 混合注意力+卷积
+from .attention.BoT3 import *         # BoT3: 瓶颈Transformer
+# --- conv/ 新增卷积 ---
+from .conv.GSConv import *            # GSConv/VoVGSCSP: Ghost Shuffle轻量卷积
+from .conv.Involution import *        # Involution: 逆卷积算子
+# --- context/ 新增上下文 ---
+from .context.SPPCSPC import *        # SPPCSPC/SPPFCSPC: CSP增强SPP
+# --- fusion/ 新增融合 ---
+from .fusion.ASFFFusion import *      # ASFFFusion: 自适应空间特征融合(双模态)
+
 # YOLO 包装器 (必须在独立模块之后导入)
 from .common import *
