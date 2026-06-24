@@ -1162,6 +1162,11 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             # --- context/ 新增上下文 ---
             SPPCSPC,       # SPPCSPC: CSP增强SPP, 多尺度上下文
             SPPFCSPC,      # SPPFCSPC: CSP增强快速SPP
+            # ================================================================
+            # 2026-06-23 新增模块 (来自 LCAFNet, 跨模态交叉注意力融合)
+            # ================================================================
+            Att_HAFFormer,       # HAFFormer: 层级注意力融合Transformer (DW-Conv QKV + 门控融合)
+            Att_CrossAttention_M, # CrossAttention_M: 双向DW-Conv交叉注意力
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments
@@ -1207,7 +1212,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                  Att_GroundTrans, Att_RenderTrans, vHeat_Fusion,
                  FCMMFusion, FCMBlockFusion,
                  DMAF, QualityWeightedFusion, EdgeBlendFusion, EI2Fusion,
-                 ASFFFusion):  # 多输入模块(from为列表), 在base_modules之前处理
+                 ASFFFusion, Att_HAFFormer, Att_CrossAttention_M):  # 多输入模块(from为列表), 在base_modules之前处理
             c1 = [ch[x] for x in f]
             c2 = args[0]
             args = [c1, c2, *args[1:]]

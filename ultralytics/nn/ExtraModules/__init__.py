@@ -81,6 +81,10 @@ from .conv.RFB import *
 # 2026-05-27 损失工具 (NWD, Soft-NMS, 独立使用不修改 ultralytics 源码)
 from .loss import *
 
+# 2026-06-23 新增模块 (来自 LCAFNet, 跨模态交叉注意力融合)
+from .fusion.HAFFormer import *         # HAFFormer: 层级注意力融合Transformer (DW-Conv QKV + 门控)
+from .fusion.CrossAttention_M import *  # CrossAttention_M: 双向DW-Conv交叉注意力
+
 # 2026-06-21 新增模块 (来自 yoloair-main)
 # --- attention/ 新增注意力 ---
 from .attention.CrissCross import *   # CrissCrossAttention: 十字交叉注意力
