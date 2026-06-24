@@ -65,9 +65,13 @@ class EBlock(nn.Module):
         """
         B, C, H, W = x.shape
         x = self.proj_in(x)
+        dtype = x.dtype  # 保存原始 dtype (可能为 float16 under AMP)
+
+        # FFT 需要 float32 精度 (cuFFT half precision 仅支持 2 的幂次维度)
+        x_f32 = x.float()
 
         # ===== 1. FFT + Shift =====
-        x_fft = torch.fft.fft2(x, norm="ortho")
+        x_fft = torch.fft.fft2(x_f32, norm="ortho")
         x_fft = torch.fft.fftshift(x_fft, dim=(-2, -1))  # DC 居中
 
         # ===== 2. 幅值/相位分离 =====
@@ -76,11 +80,11 @@ class EBlock(nn.Module):
 
         # ===== 3. 幅值调制 =====
         # 从全局特征预测基础增益
-        gain_base = self.mag_predictor(self.gap(x))  # (B, C, 1, 1)
+        gain_base = self.mag_predictor(self.gap(x.to(dtype))).float()  # (B, C, 1, 1)
 
         # 构造与 mag 相同大小的实际增益图
         # 基础增益 + 可学习的 alpha 调节
-        gain = 1.0 + self.gain_alpha * (2.0 * gain_base - 1.0)  # (B, C, 1, 1)
+        gain = 1.0 + self.gain_alpha.float() * (2.0 * gain_base - 1.0)  # (B, C, 1, 1)
         # 广播到全图
         mag_mod = mag * gain  # (B, C, H, W)
 
@@ -89,7 +93,7 @@ class EBlock(nn.Module):
 
         # ===== 5. IFFT =====
         x_fft_mod = torch.fft.ifftshift(x_fft_mod, dim=(-2, -1))
-        x_mod = torch.fft.ifft2(x_fft_mod, norm="ortho").real
+        x_mod = torch.fft.ifft2(x_fft_mod, norm="ortho").real.to(dtype)  # 恢复原始 dtype
 
         # ===== 6. 残差连接 + 输出 =====
         out = x + x_mod  # 残差连接

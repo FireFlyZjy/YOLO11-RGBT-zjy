@@ -123,27 +123,27 @@ class vHeat_Fusion(nn.Module):
         mat[1:] *= math.sqrt(2.0 / n)
         return mat
 
-    def _ensure_dct_mat(self, H, W, device, dtype):
+    def _ensure_dct_mat(self, H, W, device, dtype=torch.float32):
         """确保 DCT 矩阵已缓存 (普通 dict, 兼容 EMA).
-        缓存的 key 包含 H,W,device,dtype, 防止 FP32/FP16 类型不匹配.
+        DCT 矩阵始终以 float32 缓存, 与 _dct2d/_idct2d 的查找 key 一致.
         """
-        key = (H, W, device, dtype)
+        key = (H, W, device, torch.float32)
         if key not in self._dct_cache:
             self._dct_cache[key] = (
-                self._create_dct_matrix(H).to(device=device, dtype=dtype),
-                self._create_dct_matrix(W).to(device=device, dtype=dtype),
+                self._create_dct_matrix(H).to(device=device, dtype=torch.float32),
+                self._create_dct_matrix(W).to(device=device, dtype=torch.float32),
             )
 
     def _dct2d(self, x):
-        """2D DCT: M_H @ x @ M_W^T."""
-        M_H, M_W = self._dct_cache[(x.shape[2], x.shape[3], x.device, x.dtype)]
-        dct_h = torch.einsum("ih,bchw->bciw", M_H, x)
+        """2D DCT: M_H @ x @ M_W^T. 始终在 float32 中计算。"""
+        M_H, M_W = self._dct_cache[(x.shape[2], x.shape[3], x.device, torch.float32)]
+        dct_h = torch.einsum("ih,bchw->bciw", M_H, x.float())
         return torch.matmul(dct_h, M_W.T)
 
     def _idct2d(self, x):
-        """2D IDCT: M_H^T @ x @ M_W."""
-        M_H, M_W = self._dct_cache[(x.shape[2], x.shape[3], x.device, x.dtype)]
-        idct_h = torch.einsum("ih,bciw->bchw", M_H, x)
+        """2D IDCT: M_H^T @ x @ M_W. 始终在 float32 中计算。"""
+        M_H, M_W = self._dct_cache[(x.shape[2], x.shape[3], x.device, torch.float32)]
+        idct_h = torch.einsum("ih,bciw->bchw", M_H, x.float())
         return torch.matmul(idct_h, M_W)
 
     # ╔══════════════════════════════════════════════╗
@@ -168,41 +168,41 @@ class vHeat_Fusion(nn.Module):
         # ── 通道投影 ──
         rgb = self.proj_rgb(rgb)
         ir = self.proj_ir(ir)
+        dtype = rgb.dtype  # 保存原始 dtype (可能为 float16 under AMP)
 
         B, C, H, W = rgb.shape
 
-        # ── 准备 DCT 矩阵 ──
-        self._ensure_dct_mat(H, W, rgb.device, rgb.dtype)
+        # ── 准备 DCT 矩阵 (始终 float32) ──
+        self._ensure_dct_mat(H, W, rgb.device, torch.float32)
 
-        # ── Step 1: 空域 → 频域 (DCT) ──
-        dct_rgb = self._dct2d(rgb)  # (B, C, H, W)
-        dct_ir = self._dct2d(ir)    # (B, C, H, W)
+        # ── Step 1: 空域 → 频域 (DCT, float32) ──
+        dct_rgb = self._dct2d(rgb)  # (B, C, H, W), float32
+        dct_ir = self._dct2d(ir)    # (B, C, H, W), float32
 
-        # ── Step 2: 频率网格 ──
-        wx = torch.arange(W, device=rgb.device, dtype=rgb.dtype).view(1, 1, 1, W) / W
-        wy = torch.arange(H, device=rgb.device, dtype=rgb.dtype).view(1, 1, H, 1) / H
+        # ── Step 2: 频率网格 (float32) ──
+        wx = torch.arange(W, device=rgb.device, dtype=torch.float32).view(1, 1, 1, W) / W
+        wy = torch.arange(H, device=rgb.device, dtype=torch.float32).view(1, 1, H, 1) / H
         freq_sq = wx ** 2 + wy ** 2  # (1, 1, H, W)
 
         # ── Step 3: 模态特定热扩散系数 ──
-        k_rgb = self.k_predictor_rgb(self.gap_rgb(rgb))  # (B, C, 1, 1)
-        k_ir = self.k_predictor_ir(self.gap_ir(ir))      # (B, C, 1, 1)
+        k_rgb = self.k_predictor_rgb(self.gap_rgb(rgb.to(dtype))).float()  # (B, C, 1, 1)
+        k_ir = self.k_predictor_ir(self.gap_ir(ir.to(dtype))).float()      # (B, C, 1, 1)
 
-        # ── Step 4: 热扩散衰减 ──
-        decay_rgb = torch.exp(-k_rgb * self.t * freq_sq)  # (B, C, H, W)
-        decay_ir = torch.exp(-k_ir * self.t * freq_sq)
+        # ── Step 4: 热扩散衰减 (float32) ──
+        t = self.t.float()
+        decay_rgb = torch.exp(-k_rgb * t * freq_sq)  # (B, C, H, W)
+        decay_ir = torch.exp(-k_ir * t * freq_sq)
 
         # ── Step 5: 跨模态频率门控 ──
-        # 拼接两模态的频域特征，预测门控权重
         dct_cat = torch.cat([dct_rgb, dct_ir], dim=1)  # (B, 2C, H, W)
-        gate = self.cross_gate(dct_cat)                  # (B, 2C, 1, 1)
+        gate = self.cross_gate(dct_cat.to(dtype)).float()  # (B, 2C, 1, 1)
         gate_rgb, gate_ir = gate.chunk(2, dim=1)        # each (B, C, 1, 1)
 
-        # ── Step 6: 频域加权融合 ──
-        # 每个模态: 门控权重 × 热扩散衰减后的频域特征
+        # ── Step 6: 频域加权融合 (float32) ──
         dct_fused = gate_rgb * dct_rgb * decay_rgb + gate_ir * dct_ir * decay_ir
 
-        # ── Step 7: 频域 → 空域 (IDCT) ──
-        fused = self._idct2d(dct_fused)  # (B, C, H, W)
+        # ── Step 7: 频域 → 空域 (IDCT, float32) → 恢复原始 dtype ──
+        fused = self._idct2d(dct_fused).to(dtype)  # (B, C, H, W)
 
         # ── Step 8: 输出投影 ──
         fused = self.proj_out(fused)

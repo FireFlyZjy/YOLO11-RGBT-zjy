@@ -42,19 +42,22 @@ class FreqSpatial(nn.Module):
 
     def forward(self, x):
         b, c, h, w = x.size()
+        dtype = x.dtype  # 保存原始 dtype (可能为 float16 under AMP)
         spatial_feat = self.sed(x)
         spatial_feat = self.spatial_conv1(spatial_feat)
         spatial_feat = self.spatial_conv2(spatial_feat + x)
 
-        fft_feat = torch.fft.rfft2(x, norm='ortho')
+        # FFT 需要 float32 精度 (cuFFT half precision 仅支持 2 的幂次维度)
+        x_f32 = x.float()
+        fft_feat = torch.fft.rfft2(x_f32, norm='ortho')
         x_fft_real = torch.unsqueeze(torch.real(fft_feat), dim=-1)
         x_fft_imag = torch.unsqueeze(torch.imag(fft_feat), dim=-1)
         fft_feat = torch.cat((x_fft_real, x_fft_imag), dim=-1)
         fft_feat = rearrange(fft_feat, 'b c h w d -> b (c d) h w').contiguous()
-        fft_feat = self.fft_conv(fft_feat)
+        fft_feat = self.fft_conv(fft_feat.to(dtype))  # Conv 需要匹配权重 dtype
         fft_feat = rearrange(fft_feat, 'b (c d) h w -> b c h w d', d=2).contiguous()
-        fft_feat = torch.view_as_complex(fft_feat)
-        fft_feat = torch.fft.irfft2(fft_feat, s=(h, w), norm='ortho')
+        fft_feat = torch.view_as_complex(fft_feat.float())  # view_as_complex 需要 float32
+        fft_feat = torch.fft.irfft2(fft_feat, s=(h, w), norm='ortho').to(dtype)  # 恢复原始 dtype
         fft_feat = self.fft_conv2(fft_feat)
 
         return self.final_conv(spatial_feat + fft_feat)

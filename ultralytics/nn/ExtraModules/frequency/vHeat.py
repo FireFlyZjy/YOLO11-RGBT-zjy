@@ -98,49 +98,45 @@ class vHeat(nn.Module):
         """
         B, C, H, W = x.shape
         x = self.proj_in(x)
+        dtype = x.dtype  # 保存原始 dtype (可能为 float16 under AMP)
 
-        # ---------- 预计算 DCT 矩阵 ----------
-        self._ensure_dct_mat(H, W, x.device, x.dtype)
-        M_H, M_W = self._dct_cache[(H, W, x.device, x.dtype)]  # (H, H), (W, W)
+        # DCT/IDCT 需要 float32 精度, 统一升精度处理
+        x_f32 = x.float()
+
+        # ---------- 预计算 DCT 矩阵 (始终 float32) ----------
+        self._ensure_dct_mat(H, W, x.device, torch.float32)
+        M_H, M_W = self._dct_cache[(H, W, x.device, torch.float32)]  # (H, H), (W, W)
 
         # ---------- 2D DCT ----------
-        # DCT = M_H @ x @ M_W^T
-        # 沿 H 维:  einsum('ih,bchw->bciw', M_H, x)
-        # 沿 W 维:  result @ M_W^T
-        dct_h = torch.einsum("ih,bchw->bciw", M_H, x)         # (B, C, H, W)
-        dct = torch.matmul(dct_h, M_W.T)                        # (B, C, H, W)
+        dct_h = torch.einsum("ih,bchw->bciw", M_H, x_f32)      # (B, C, H, W)
+        dct = torch.matmul(dct_h, M_W.T)                          # (B, C, H, W)
 
         # ---------- 频率网格 (归一化) ----------
-        # wx ∈ [0, 1/W, 2/W, ..., (W-1)/W];  wy 同理
-        wx = torch.arange(W, device=x.device, dtype=x.dtype).view(1, 1, 1, W) / W
-        wy = torch.arange(H, device=x.device, dtype=x.dtype).view(1, 1, H, 1) / H
+        wx = torch.arange(W, device=x.device, dtype=torch.float32).view(1, 1, 1, W) / W
+        wy = torch.arange(H, device=x.device, dtype=torch.float32).view(1, 1, H, 1) / H
         freq_sq = wx ** 2 + wy ** 2  # (1, 1, H, W)
 
         # ---------- 自适应热扩散系数 k ----------
-        k = self.k_predictor(self.gap(x))  # (B, C, 1, 1), k ∈ (0, 1)
+        gap_out = self.gap(x_f32).to(dtype)  # 匹配 k_predictor 权重 dtype
+        k = self.k_predictor(gap_out).float()  # (B, C, 1, 1), k ∈ (0, 1)
 
         # ---------- 热扩散衰减 ----------
-        # decay = exp(-k * t * freq_sq)
-        decay = torch.exp(-k * self.t * freq_sq)  # (B, C, H, W)
+        # decay = exp(-k * t * freq_sq), t 始终 float32
+        t = self.t.float()
+        decay = torch.exp(-k * t * freq_sq)  # (B, C, H, W)
 
         # 应用衰减
         dct_decayed = dct * decay  # (B, C, H, W)
 
         # ---------- 2D IDCT ----------
-        # IDCT = M_H^T @ dct_decayed @ M_W
-        # 沿 H 维: M_H^T @ dct  => einsum('ih,bciw->bchw', M_H, dct)
-        #           M_H[i,h] * dct[b,c,i,w] sum over i = (M_H^T @ dct)[b,c,h,w]
-        # 沿 W 维:  idct @ M_W => torch.matmul(idct, M_W)
-        #           (B,C,H,W) @ (W,W): contract last dim of idct (W) with
-        #           second-to-last of M_W (W) = (idct @ M_W)[b,c,h,w]
         idct_h = torch.einsum("ih,bciw->bchw", M_H, dct_decayed)  # (B, C, H, W)
         idct = torch.matmul(idct_h, M_W)                            # (B, C, H, W)
 
         # ---------- 残差连接 ----------
-        # IDCT 结果 + 原始输入
-        out = idct + x
+        out = idct + x_f32
 
-        # ---------- 输出投影 + 归一化 ----------
+        # ---------- 输出投影 + 归一化 (恢复原始 dtype) ----------
+        out = out.to(dtype)
         out = self.proj_out(out)
         out = self.norm(out)
         return out

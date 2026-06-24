@@ -1,0 +1,646 @@
+# 2025-SOTA目标检测模型项目(2026发论文必备项目)
+
+鉴于目前YOLO系列模型反映的拒稿率越来越高且YOLO模型确实非常泛滥，无论是不是计算机专业、是不是小白都基本可以快速上手YOLO模型，导致计算机专业和有期刊级别要求的小伙伴日益难受，简单来说就是YOLO在学术界的红利已经基本吃透，目前开始越来越多人转CVPR2024-RTDETR，而且目前研究生毕业一年比一年难，不像以前随便结合点深度学习就可以毕业，就像越来越多人反馈，导师已经明确禁止不能用YOLO，再加上这么多年来YOLO对学术的灌水已经让审稿人出现视觉疲劳，带上了”有色”眼镜看待YOLO，所以结合以上众多原因，因此我们需要一个有一定上手难度且是顶会的模型来支撑我们后续的大小论文的工作。
+PS:20250614版本更新后，本项目的dfine和cvpr2025-deimv1已经支持Ultralytics同款的配置文件形式，大大降低上手难度！[B站介绍链接](https://www.bilibili.com/video/BV1Q4MHzXEdd/)
+
+### 1. 这个项目包含什么模型？
+
+这个项目的源代码来自：[DEIM](https://github.com/ShihuaHuang95/DEIM)  
+其内部可以跑以下模型(以下模型支持目标检测，DFine、DEIM支持实例分割，不支持姿态检测、旋转目标检测)：
+1. CVPR2025-DEIM
+2. ICLR2025-DFine
+3. RTDETRV2
+4. DEIMV2
+
+选择这个课程，这些模型都可以改进，不限于DEIM，这些都是顶会的模型，不要说2025，就算是2026、2027都不落后！还有一个重点就是像CVPR2024-RTDETR，最小的模型也有50GFLOPs，但是现在的DEIM和DFine都有像YOLO一样的Nano大小版本的模型，变相降低了训练成本和设备要求！(建议最低12G显存的显卡起步)
+
+### 2. 这个项目会以什么形式开展？
+
+1. 这个项目跟以往区别比较大，我们其他改进项目都是直接提供好修改好的代码，用户不需要懂代码的情况下也可以开始做实验，甚至可以做完实验，但是这样也有一个不好的点，就是会大幅度降低上手门槛，这特别对计算机专业的同学来说是非常不利的，因此这个项目在代码工程方面，这个项目我们会有教程教大家怎么去调试程序、修改代码、添加模块。
+2. 这个项目会**不定时(直播时间到时候会群里进行通知，没有硬性规定多久一次，不方便看的会有录播)**有**直播**，详细直播内容请看第三大点。
+3. 这个项目会持续更新创新点，如果创新点是来源于现有的模型，还会提供对应的论文及其中文翻译版本（假设像FasterNet中的FasterBlock，会提供好对应的py文件、原论文及其中文翻译版本），用户可以根据从本课程学习到的缝合模块（代指第一点）去定制或者创新自己的网络。
+4. 附带答疑群，答疑群主要答疑的内容是实验、代码操作、代码报错等相关问题(经过YOLO、RTDETR大量的经验，我没法保证每一个问题都能回复到大家，只能保证遇到过的问题会给大家提供建议和方向，当然群内的一些高频问题，我也会收集起来挑出部分出视频或者直播给大家进行解答)。
+5. 如果后续有剪枝、蒸馏，不需要额外付费，本项目会包含在内，所以性价比真的非常高，YOLO改进剪枝蒸馏三件套也要200多了。
+
+### 3. 直播内容
+
+1. 解答群内一些高频疑问，比如很多人都会遇到的报错、或者注意点。
+2. 教大家如何去做二次创新(PS:这个不是口头给大家说怎么二次创新，而是从代码的层面带大家去实践二次创新。可能这里会有同学问，那自研创新呢？你会自研模块的前提是必须要懂如何二次创新，首先这是一个过程，然后我有很多自研模块是突然有的想法或者看论文看到某些结构与之前看到的论文联合后有新的想法，所以也很难描述我为什么就想到这个结构，大多数情况下，只需要会有一定复杂度的二次创新就足够，当然自研模块有机会我也会去讲)
+3. 给大家从浅到深解说一些我认为比较经典的模块，提高自己能创新新模块的能力和基础，因为很多模块都是相通的，本质没有变，只是模块上的组合体替换。(有不少人私聊我说，能不能出些你是如何结合一些现有的模块去创新的，虽然现在B站上也有不少讲创新点的，但是他们的感觉就是从头到尾读一篇代码，我看了几次之后觉得我把代码扔给GPT给我打上注释的感觉是一样的，看的时候感觉哦哦哦这样，看完后就不知所然)
+
+### 3. 入手本项目需要注意些什么？
+
+1. 因为本项目完全不是像之前YOLO项目这样傻瓜式操作，所以本项目有一定难度，具有以下特征的小伙伴不建议入手。（看到这里可能有人会问，为什么不考虑把DEIM、DFine、RTDETRV2都移植到Ultralytics？因为这个不确定性太大，DETR类型的模型对参数非常敏感，可能有一点参数不合适，效果就会大打折扣，但是对于这种较为复杂的模型移植过程中又很难保证一比一全过程移植） 
+- 未入门、100%纯小白(如果你有心学，这个不是问题)
+- 不太想花太多时间去学，搞这个只是想为了水个无要求的论文就行
+- 没有任何解决问题的能力(如果你有心学，这个不是问题)
+- 从来不看使用文档、说明之类的(强烈不建议入手)  
+- 此项目上手需要时间，如果想无脑直接跑就不合适购入  
+最后补充！如果你具有以上特征，但又要求期刊不能太水或者不能做yolo的问题，尽早入手CVPR2024-RTDETR吧，去年没抓上，今年不能再等了，模型红利可不等人。
+2. 入手前可以先去B站看一下[CVPR025-DEIM合集里面的教程](https://space.bilibili.com/286900343/lists/4909499)，最起码先跑通过DEIM原始模型，能跟着视频训练和测试，然后也把合集里面的基础课程都先看一下，为后面打好基础。
+3. 我认为这个不是什么不可达到的事，就看你想不想毕业了，有志者事竟成。
+PS:20250614版本更新后，本项目的dfine和deim已经支持Ultralytics同款的配置文件形式，大大降低上手难度！[B站介绍链接](https://www.bilibili.com/video/BV1Q4MHzXEdd/)
+
+### 4. 价格
+
+1. 本项目价格为288，没有时效限制。（与其150、200买个YOLO纯模型改进专栏，不如288买个2025-SOTA专栏，最起码不用怕花了钱，最后做的YOLO还投不出去，还毕不了业）
+2. 虚拟项目一经售出不退不换，需要入手前考虑清楚，如果你是初次入手我的项目，怕我不靠谱，可以先考虑入手个YOLO和RTDETR看下。
+
+### 5. 项目使用问题
+
+1. 购买本项目的使用者都会得到一个独一无二的用于解压7z的密码，到时候用于解压对应的压缩包，此密码自己妥善保管，请勿告诉他人。
+2. 本项目的视频和直播回放统一都是加密视频，每个购买者都可以得到一个激活码，激活码在每个人专属的7z压缩文件内。
+
+### 6. 项目更新公告
+
+- 20250330
+
+    1. 初版项目发布.
+
+- 20250413
+
+    1. 新增多个改进模块并新增模块简介，位置在engine/extre_module/module_images内。
+    2. 新增训练和测试阶段的进度条显示。
+    3. 优化tensorboard中的精度名称显示。
+    4. 优化输出，把重要信息换颜色显示。
+    5. 新增plot_train_batch_freq参数，用于控制间隔多少epoch保存第一个batch中的数据增强后的图像，默认为12。
+    6. 新增保存当前参数信息，会自动保存到output_dir中的args.json文件内。
+    7. 优化output_dir保存逻辑，当判断output_dir路径存在的时候，会自动在后缀加1，避免覆盖原先代码。
+
+- 20250419
+
+    1. 新增verbose_type参数，用于控制使用默认还是进度条输出，默认为官方默认输出形式。
+    2. 新增thop计算模型计算量方式，避免calflops对于部分算子出现不支持报错的操作。
+    3. 完善每个模块的py文件，增加输出计算量和参数量等数值，方便用户后续调试。
+    4. 给DataLoader中添加pin_memory参数为True，可以在训练时候如果是数据加载成为瓶颈，可以提高速度。
+    5. 修复用户反馈的已知问题。
+    6. 新增多个改进模块。
+
+- 20250429
+
+    1. 修复engine/extre_module/custom_nn/attention/SEAM.py模块，应该是MutilSEAM。
+    2. 新增一些进阶课程的视频。
+    3. 新增多个改进模块。
+    4. 修复用户反馈的已知问题。
+    5. 修复续训时候会新增一个保存路径的问题。
+    6. 修复多卡训练Stage2的时候会出现部分进程找不到权重文件的问题。
+
+- 20250514
+
+    1. 新增一些进阶课程的视频。
+    2. 新增多个改进模块。
+    3. 修复用户反馈的已知问题。
+
+- 20250526
+
+    1. 新增一些进阶课程的视频。
+    2. 新增多个改进模块。
+    3. 新增cache_ram参数，详细可以看userguide。
+    4. 修复在torch2.7.0下出现的NotImplementedError问题。
+
+- 20250609
+
+    1. 修复新增了cache_ram功能后训练COCO数据集精度不正常的问题。
+    2. 修复在训练COCO数据集中数据增强的绘制BUG。
+    3. 新增多个改进模块。
+    4. 新增一些进阶课程的视频。
+    5. 修复用户反馈的已知问题。
+
+- 20250614
+
+    1. 新增Ultralytics的配置文件方式，大大降低改进难度。
+    2. 新增一些<Ultralytics的配置文件方式>进阶课程的视频。
+    3. 新增多个改进模块。
+
+- 20250617
+
+    1. 修复配置文件中层序号有误的问题。
+
+- 20250619
+
+    1. 修复配置文件中层序号有误的问题。
+    2. 新增多个改进模块。
+    3. 新增一些<Ultralytics的配置文件方式>进阶课程的视频。
+
+- 20250625
+
+    1. 修复best_stg2保存异常的问题。
+    2. 新增YOLOV13中的HyperACE模块。
+    3. 新增多个关于<Ultralytics的配置文件方式>进阶课程的视频。
+
+- 20250705
+
+    1. 新增多个改进模块。
+    2. 新增多个关于<Ultralytics的配置文件方式>进阶课程的视频。
+    3. 新增20250704基础疑问解答直播回放链接。
+
+- 20250714
+
+    1. 新增多个改进模块。
+    2. 新增多个关于<Ultralytics的配置文件方式>进阶课程的视频。
+    3. 新增小目标检测网络架构专题一群课题直播回放。
+
+- 20250726
+
+    1. 新增在test-only的状态下输出每个类别的'mAP', 'mAP_50', 'mAP_75', 'mAP_s', 'mAP_m', 'mAP_l'。
+    2. 新增多个改进模块。
+    3. 修复用户反馈的已知问题。
+    4. 新增一个JSON格式数据集脚本。(输出类别数和类别id、输出每个类别的实例数量)
+
+- 20250817
+
+    1. 新增支持蒸馏学习，蒸馏学习支持断点续训使用方法跟正常训练一样。
+    2. 蒸馏学习支持特征蒸馏、逻辑蒸馏、特征+逻辑蒸馏 这三种方式。
+    3. 无论是Ultralytics配置文件方式、还是原始的代码方式都支持相互蒸馏。
+    4. 蒸馏学习支持控制epoch，例如只有前50epoch进行蒸馏学习，后50epoch关闭蒸馏学习。
+    5. 更多细节请看关于<知识蒸馏教学视频>的进阶课程。
+    6. 支持输出YOLO指标(Precision、Recall、F1-Score、mAP50、mAP75、mAP50-95)，详细请看userguide。
+    7. 新增多个改进模块。
+    8. 新增小目标检测网络架构专题二链接。
+
+- 20250823
+
+    1. 修复YOLO指标在一些图片没真实标签的时候报错的bug。
+    2. 开放逻辑蒸馏，在项目内有对应的课程。
+    3. 新增多个改进模块。
+    4. 新增<知识蒸馏教学视频>的进阶课程。
+
+- 20250907
+
+    1. 新增多个改进模块。
+    2. 修复蒸馏学习中教师信息输出错误的问题。
+
+- 20250921
+
+    1. 新增导出脚本(export.py)，支持导出onnx、tensorrt模型。
+    2. 重构大部分输出，增加输出对应的时间、文件、函数、行数，以便用户快速定位。
+    3. 新增20250910直播回放链接。
+    4. 修复一些已知BUG。
+    5. 完善onnx、tensorrt模型推理脚本。
+    6. 支持在train.py test-only状态下中使用onnx、tensorrt模型进行验证。
+    7. 新增<模型导出>相关教程视频。
+    8. 新增多个改进模块。
+    9. 支持DINOV3(ConvNext、ViT)作为主干进行微调。<教程在百度云创新课题的第五点>
+
+- 20251012
+
+    1. 移植DEIMV2到本项目，暂只支持原始的代码修改方式。
+    2. 更新UserGuide。
+    3. 新增<DEIMV2说明视频>。
+    4. 修复一些已知问题。
+
+- 20251025
+
+    1. 新增DQ-DETR的模块。
+    2. 新增多个改进模块。
+    3. 新增<DQ-DETR改进点>的相关教程视频。
+    4. 修复一些已知问题。
+
+- 20251102
+
+    1. 新增<DQ-DETR改进点>的相关教程视频。
+    2. 修复一些已知问题。
+
+- 20251115
+
+    1. 新增以DensityMap为主导的创新课程[DFINE with Density-aware Query Selection]。
+    2. 修复一些已知问题。
+
+- 20251207
+
+    1. 新增在test-only状态下，yolo-metrice支持保存混淆矩阵。
+    2. 新增DFine、DEIM实例分割的实现，使用相关请看进阶教程实例分割部分。
+    3. 更新dataset/coco_analyzer.py脚本，支持输出数据集中更多的内容，以便分析数据集的特点。
+    4. 新增tools/visualization/tp_fp_fn_analysis.py脚本，用于分析检测结果中的tp、fp、fn。
+    5. 新增多个改进模块。
+    6. 修复一些已知问题。
+    7. 新增<TGRS2025-HighFrequencyDirectionInjection创新思想课程>。
+    8. 新增基于ByteTrack的目标跟踪，教程请看进阶教程内的<目标跟踪ByteTrack的使用教程>。
+
+- 20251213
+
+    1. 参考CVPR2022-MaskDINO重构实例分割检测头代码。
+    2. 修复在ram_cache状态下实例分割数据集部分存在的BUG。
+    3. 重新录制实例分割部分的进阶视频。
+
+- 20251224
+
+    1. 新增多个改进模块。
+    2. 修复实例分割部分已知的问题。
+    3. 新增以DensityMap为主导的实例分割检测头内容[DFINESeg with Density-aware Query Selection]。
+    4. 新增[DFINESeg with Density-aware Query Selection]的使用视频教程。
+    5. 更新实例分割实现讲解。
+
+- 20251226
+
+    1. 修复一些已知问题。
+    2. 新增基于COCO-Tiny指标，并支持输出每类COCO-Tiny指标，详细请看UserGuide.md中的<项目内yml一些额外参数说明>。
+
+- 20260109
+
+    1. 修复一些已知问题。
+    2. 新增<ES-MoE>动态路由网络模块。
+    3. 更新视频链接。
+
+- 20260128
+
+    1. 修复一些已知问题。
+    2. 新增多个改进模块。
+    3. 新增<ES-MoE>动态路由网络教程视频。
+    4. 新增<TPAMI2025 YOLO-MS>的MSBlock和GQL的教程视频。
+
+- 20260224
+
+    1. 修复一些已知问题。
+    2. 新增多个改进模块。
+    3. compile_module的编译模块支持50系显卡。
+    4. 为了兼容50系用户，新版的环境统一修改成torch2.8.0，旧版本的用户不影响。
+
+- 20260310
+
+    1. 新增diou, ciou, eiou, siou, shapeiou, piou, piou2。
+    2. 支持TIMM中的主干进行训练。
+    3. DINOV3版本支持Ultralytics版本训练。
+    4. 新增AAAI2026-SPJFB模块。
+    5. 新增TGRS2025-GLSS2D模块。
+    6. 新增TIP2025-CAFM模块。
+    7. 新增TIP2025-DWM_MSA模块。
+    8. 新增DynamicERF模块。
+    9. 新增如何使用其他IOU的操作视频。
+    10. 新增TIMM主干的操作视频。
+    11. yolo_metrice参数从默认为False改为True，代表训练过程中YOLO和COCO指标都会一并输出。
+
+- 20260323
+
+    1. 新增CVPR2026-DEGConv模块。
+    2. 新增CVPR2026-BinaryAttention模块。
+    3. 新增CVPR2026-TransMixer模块。
+    4. 新增CVPR2025-wca模块。
+    5. 新增自研模块-DAF模块。
+    6. 新增自研模块-CIDAF模块。
+    7. 新增自研模块-WDAF模块。
+    8. 新增自研模块-EdgeLAWDS模块。
+    9. 新增自研模块-FreqLAWDS模块。
+    10. 新增自研模块-RouterLAWDS模块。
+    11. 新增自研模块-FasterCGABlock模块。
+    12. 新增自研模块-ADHOGSA模块。
+    13. 训练过程中新增数据集标签文件与实际设置的num_classes是否匹配的判定。
+    14. 新增RGB+Depth的多模态配置文件和视频教程。
+
+- 20260331
+    
+    1. 新增CVPR2026-sparse_state_space模块。
+    2. 新增CVPR2026-sparse_mamba_block模块。
+    3. 新增CVPR2026-MSInit模块。
+    4. 新增CVPR2026-PFG模块。
+    5. 新增TGRS2026-CGTA模块。
+    6. 新增TGRS2026-LCGA模块。
+    7. 新增CVPR2026-SFSFusion模块。
+    8. 新增CVPR2026-LFP模块。
+    9. 新增CVPR2026-FAAFusion模块。
+    10. 新增CVPR2026-Does YOLO Really Need to See Every Training Image in Every Epoch?的实现方法，此方法主要用于筛选简单和困难的样本，大部分情况下可以无损加速训练，详细教程可以看docs/AFSS_YML_扩展示例说明.md
+    11. pycocoeval库修复numpy版本限制的问题。
+    12. featuremap.py生成特征图的时候会多生成一个sum.png，此图为每层的通道求和后的特征图。
+
+- 20260413
+
+    1. 新增自研模块-FSCGD模块。
+    2. 新增自研模块-ADIE模块。
+    3. 新增自研模块-AMSI模块。
+    4. 新增自研模块-CMSI模块。
+    5. 新增自研模块-CSIE模块。
+    6. 新增自研模块-DPFGA模块。
+    7. 新增自研模块-FMSI模块。
+    8. 新增自研模块-HOIE模块。
+    9. 新增自研模块-HPFGA模块。
+    10. 新增PR2026-HAFFormer模块。
+    11. 新增AAAI2026-CirculantAttention模块。
+    12. 新增TGRS2025-DSEBlock模块。
+    13. 新增TGRS2025-LaSEA模块。
+    14. 新增CVPR2026-SFEB模块。
+
+- 20260425
+
+    1. 新增自研模块-FSDA模块。
+    2. 新增自研模块-ODALStem模块。
+    3. 新增TIP2026-FourierSR模块。
+    4. 新增自研模块-MCCG模块。
+    5. 新增自研模块-DSRG模块。
+    6. 新增CVPR2026-AFFN模块。
+    7. 新增CVPR2026-WDAM模块。
+    8. 新增自研模块-LowFrequencyFeatureFusion模块。
+    9. 新增自研模块-DPAS模块。
+    10. 新增自研模块-WGFS模块。
+    11. 新增自研模块-MSCRM模块。
+    12. 新增自研模块-DCGRM模块。
+    13. 新增CVPR2026-FrequencyCM模块。
+    14. 新增PR2026-A3FPN。
+    15. 修复一些已知问题。
+
+### 7. 目前已有的模块
+
+- engine/extre_module/custom_nn/attention 
+
+    1. engine/extre_module/custom_nn/attention/SEAM.py
+    2. CVPR2021|engine/extre_module/custom_nn/attention/ca.py
+    3. ICASSP2023|engine/extre_module/custom_nn/attention/ema.py
+    4. ICML2021|engine/extre_module/custom_nn/attention/simam.py
+    5. ICCV2023|engine/extre_module/custom_nn/attention/lsk.py
+    6. WACV2024|engine/extre_module/custom_nn/attention/DeformableLKA.py
+    7. engine/extre_module/custom_nn/attention/mlca.py
+    8. BIBM2024|engine/extre_module/custom_nn/attention/FSA.py
+    9. AAAI2025|engine/extre_module/custom_nn/attention/CDFA.py
+    10. TGRS2025|engine/extre_module/custom_nn/attention/MCA.py
+    11. CVPR2025|engine/extre_module/custom_nn/attention/CASAB.py 
+    12. NN2025|engine/extre_module/custom_nn/attention/KSFA.py
+    13. TPAMI2025|engine/extre_module/custom_nn/attention/GQL.py
+    14. TGRS2025|engine/extre_module/custom_nn/attention/ACA.py
+    15. TGRS2025|engine/extre_module/custom_nn/attention/DHPF.py
+    16. TGRS2025|engine/extre_module/custom_nn/attention/ACAB.py
+    17. 自研模块|engine/extre_module/custom_nn/attention/FSDA.py
+
+- engine/extre_module/custom_nn/block
+
+    1. engine/extre_module/custom_nn/block/RepHMS.py
+    2. 自研模块|engine/extre_module/custom_nn/block/rgcspelan.py
+    3. TPAMI2025|engine/extre_module/custom_nn/block/MANet.py
+
+- engine/extre_module/custom_nn/conv_module
+
+    1. CVPR2021|engine/extre_module/custom_nn/conv_module/dbb.py
+    2. IEEETIP2024|engine/extre_module/custom_nn/conv_module/deconv.py
+    3. ICCV2023|engine/extre_module/custom_nn/conv_module/dynamic_snake_conv.py
+    4. CVPR2023|engine/extre_module/custom_nn/conv_module/pconv.py
+    5. AAAI2025|engine/extre_module/custom_nn/conv_module/psconv.py
+    6. CVPR2025|engine/extre_module/custom_nn/conv_module/ShiftwiseConv.py
+    7. engine/extre_module/custom_nn/conv_module/wdbb.py
+    8. engine/extre_module/custom_nn/conv_module/deepdbb.py
+    9. ECCV2024|engine/extre_module/custom_nn/conv_module/wtconv2d.py
+    10. CVPR2023|engine/extre_module/custom_nn/conv_module/ScConv.py
+    11. engine/extre_module/custom_nn/conv_module/dcnv2.py
+    12. CVPR2024|engine/extre_module/custom_nn/conv_module/DilatedReparamConv.py
+    13. engine/extre_module/custom_nn/conv_module/gConv.py
+    14. CVPR2024|engine/extre_module/custom_nn/conv_module/IDWC.py
+    15. engine/extre_module/custom_nn/conv_module/DSA.py
+    16. CVPR2025|engine/extre_module/custom_nn/conv_module/FDConv.py
+    17. CVPR2023|engine/extre_module/custom_nn/conv_module/dcnv3.py
+    18. CVPR2024|engine/extre_module/custom_nn/conv_module/dcnv4.py
+    19. CVPR2024|engine/extre_module/custom_nn/conv_module/DynamicConv.py
+    20. CVPR2024|engine/extre_module/custom_nn/conv_module/FADC.py
+    21. CVPR2023|engine/extre_module/custom_nn/conv_module/SMPConv.py
+    22. MIA2025|engine/extre_module/custom_nn/conv_module/FourierConv.py
+    23. CVPR2024|engine/extre_module/custom_nn/conv_module/SFSConv.py
+    24. ICCV2025|engine/extre_module/custom_nn/conv_module/MBRConv.py
+    25. ICCV2025|engine/extre_module/custom_nn/conv_module/ConvAttn.py
+    26. ICCV2025|engine/extre_module/custom_nn/conv_module/Converse2D.py
+    27. CVPR2025|engine/extre_module/custom_nn/conv_module/gcconv.py
+    28. ACCV2024|engine/extre_module/custom_nn/conv_module/RMBC.py
+    29. CVPR2026|engine/extre_module/custom_nn/conv_module/DEGConv.py
+
+- engine/extre_module/custom_nn/upsample
+
+    1. CVPR2024|engine/extre_module/custom_nn/upsample/eucb.py
+    2. CVPR2024|engine/extre_module/custom_nn/upsample/eucb_sc.py
+    3. engine/extre_module/custom_nn/upsample/WaveletUnPool.py
+    4. ICCV2019|engine/extre_module/custom_nn/upsample/CARAFE.py
+    5. ICCV2023|engine/extre_module/custom_nn/upsample/DySample.py
+    6. ICCV2025|engine/extre_module/custom_nn/upsample/Converse2D_Up.py
+    7. CVPR2025|engine/extre_module/custom_nn/upsample/DSUB.py
+
+- engine/extre_module/custom_nn/downsample
+
+    1. IEEETIP2020|engine/extre_module/custom_nn/downsample/gcnet.py
+    2. 自研模块|engine/extre_module/custom_nn/downsample/lawds.py 
+    3. engine/extre_module/custom_nn/downsample/WaveletPool.py
+    4. engine/extre_module/custom_nn/downsample/ADown.py
+    5. engine/extre_module/custom_nn/downsample/YOLOV7Down.py
+    6. engine/extre_module/custom_nn/downsample/SPDConv.py
+    7. engine/extre_module/custom_nn/downsample/HWD.py
+    8. engine/extre_module/custom_nn/downsample/DRFD.py
+    9. TGRS2025|engine/extre_module/custom_nn/conv_module/FSConv.py
+    10. 自研模块|engine/extre_module/custom_nn/downsample/FSCGD.py
+
+- engine/extre_module/custom_nn/stem
+
+    1. engine/extre_module/custom_nn/stem/SRFD.py
+    2. engine/extre_module/custom_nn/stem/LoG.py
+    3. ICCV2023|engine/extre_module/custom_nn/stem/RepStem.py
+    4. 自研模块｜engine/extre_module/custom_nn/stem/ODALStem.py
+    5. 自研模块｜engine/extre_module/custom_nn/stem/DPAS.py
+    6. 自研模块｜engine/extre_module/custom_nn/stem/WGFS.py
+
+- engine/extre_module/custom_nn/featurefusion
+
+    1. 自研模块|engine/extre_module/custom_nn/featurefusion/cgfm.py
+    2. BMVC2024|engine/extre_module/custom_nn/featurefusion/msga.py
+    3. CVPR2024|engine/extre_module/custom_nn/featurefusion/mfm.py
+    4. IEEETIP2023|engine/extre_module/custom_nn/featurefusion/CSFCN.py
+    5. BIBM2024|engine/extre_module/custom_nn/featurefusion/mpca.py
+    6. ACMMM2024|engine/extre_module/custom_nn/featurefusion/wfu.py
+    7. CVPR2025|engine/extre_module/custom_nn/featurefusion/GDSAFusion.py
+    8. engine/extre_module/custom_nn/featurefusion/PST.py
+    9. TGRS2025|engine/extre_module/custom_nn/featurefusion/MSAM.py
+    10. INFFUS2025|engine/extre_module/custom_nn/featurefusion/DPCF.py
+    11. CVRP2025|engine/extre_module/custom_nn/featurefusion/LCA.py
+    12. TGRS2025|engine/extre_module/custom_nn/featurefusion/HFFE.py
+    13. TGRS2025|engine/extre_module/custom_nn/featurefusion/MFPM.py
+    14. TGRS2025|engine/extre_module/custom_nn/featurefusion/ERM.py
+    15. TIP2025|engine/extre_module/custom_nn/featurefusion/CAFM.py
+    16. 自研模块｜engine/extre_module/custom_nn/featurefusion/DAF.py
+    17. CVPR2026|engine/extre_module/custom_nn/featurefusion/SFSFusion.py
+    18. CVPR2026｜engine/extre_module/custom_nn/featurefusion/FAAFusion.py
+    19. PR2026|engine/extre_module/custom_nn/featurefusion/HAFFormer.py
+    20. 自研模块｜engine/extre_module/custom_nn/featurefusion/LowFrequencyFeatureFusion.py
+    21. 自研模块｜engine/extre_module/custom_nn/featurefusion/DCGRM.py
+    22. 自研模块｜engine/extre_module/custom_nn/featurefusion/MSCRM.py
+
+- engine/extre_module/custom_nn/module
+
+    1. AAAI2025|engine/extre_module/custom_nn/module/APBottleneck.py
+    2. CVPR2025|engine/extre_module/custom_nn/module/efficientVIM.py
+    3. CVPR2023|engine/extre_module/custom_nn/module/fasterblock.py
+    4. CVPR2024|engine/extre_module/custom_nn/module/starblock.py
+    5. engine/extre_module/custom_nn/module/DWR.py
+    6. CVPR2024|engine/extre_module/custom_nn/module/UniRepLKBlock.py
+    7. CVPR2025|engine/extre_module/custom_nn/module/mambaout.py
+    8. AAAI2024|engine/extre_module/custom_nn/module/DynamicFilter.py
+    9. engine/extre_module/custom_nn/module/StripBlock.py
+    10. TGRS2024|engine/extre_module/custom_nn/module/elgca.py
+    11. CVPR2024|engine/extre_module/custom_nn/module/LEGM.py
+    12. ICCV2023|engine/extre_module/custom_nn/module/iRMB.py
+    13. TPAMI2025|engine/extre_module/custom_nn/module/MSBlock.py
+    14. ICLR2024|engine/extre_module/custom_nn/module/FATBlock.py
+    15. CVPR2024|engine/extre_module/custom_nn/module/MSCB.py
+    16. engine/extre_module/custom_nn/module/LEGBlock.py
+    17. engine/extre_module/custom_nn/module/GLSA.py
+    18. CVPR2025|engine/extre_module/custom_nn/module/RCB.py
+    19. ECCV2024|engine/extre_module/custom_nn/module/JDPM.py
+    20. CVPR2025|engine/extre_module/custom_nn/module/vHeat.py
+    21. CVPR2025|engine/extre_module/custom_nn/module/EBlock.py
+    22. CVPR2025|engine/extre_module/custom_nn/module/DBlock.py
+    23. ECCV2024|engine/extre_module/custom_nn/module/FMB.py
+    24. CVPR2024|engine/extre_module/custom_nn/module/IDWB.py
+    25. ECCV2022|engine/extre_module/custom_nn/module/LFE.py
+    26. AAAI2025|engine/extre_module/custom_nn/module/FCM.py
+    27. CVPR2024|engine/extre_module/custom_nn/module/RepViTBlock.py
+    28. CVPR2024|engine/extre_module/custom_nn/module/PKIModule.py
+    29. CVPR2024|engine/extre_module/custom_nn/module/camixer.py
+    30. ICCV2025|engine/extre_module/custom_nn/module/ESC.py
+    31. CVPR2025|engine/extre_module/custom_nn/module/nnWNet.py
+    32. TGRS2025|engine/extre_module/custom_nn/module/ARF.py
+    33. AAAI2024|engine/extre_module/custom_nn/module/CFBlock.py
+    34. IJCV2024|engine/extre_module/custom_nn/module/FMA.py
+    35. engine/extre_module/custom_nn/module/LWGA.py
+    36. TGRS2025|engine/extre_module/custom_nn/module/CSSC.py
+    37. TGRS2025|engine/extre_module/custom_nn/module/CNCM.py
+    38. ICCV2025|engine/extre_module/custom_nn/module/HFRB.py
+    39. ICIP2025|engine/extre_module/custom_nn/module/EVA.py
+    40. CVPR2025|engine/extre_module/custom_nn/module/IEL.py
+    41. MICCAI2023|engine/extre_module/custom_nn/module/MFEBlock.py
+    42. AAAI2026|engine/extre_module/custom_nn/module/PartialNetBlock.py
+    43. TGRS2025|engine/extre_module/custom_nn/module/DRG.py
+    44. engine/extre_module/custom_nn/module/Wave2D.py
+    45. TGRS2025|engine/extre_module/custom_nn/module/GLGM.py
+    46. TGRS2025|engine/extre_module/custom_nn/module/MAC.py
+    47. AAAI2026|engine/extre_module/custom_nn/module/SPJFB.py
+    48. 自研模块｜engine/extre_module/custom_nn/module/FasterCGABlock.py
+    49. CVPR2026|engine/extre_module/custom_nn/module/sparse_mamba_block.py
+    50. CVPR2026|engine/extre_module/custom_nn/module/MSInit.py
+    51. CVPR2026|engine/extre_module/custom_nn/module/PFG.py
+    52. CVPR2026|engine/extre_module/custom_nn/module/LFP.py
+    53. 自研模块|engine/extre_module/custom_nn/module/AMSI.py
+    54. 自研模块|engine/extre_module/custom_nn/module/CMSI.py
+    55. 自研模块|engine/extre_module/custom_nn/module/FMSI.py
+    56. 自研模块|engine/extre_module/custom_nn/module/HPFGA.py
+    57. 自研模块|engine/extre_module/custom_nn/module/DPFGA.py
+    58. 自研模块|engine/extre_module/custom_nn/module/HOIE.py
+    59. 自研模块|engine/extre_module/custom_nn/module/ADIE.py
+    60. 自研模块|engine/extre_module/custom_nn/module/CSIE.py
+    61. TGRS2025|engine/extre_module/custom_nn/module/DSEBlock.py
+    62. TGRS2025|engine/extre_module/custom_nn/module/LaSEA.py
+    63. CVPR2026|engine/extre_module/custom_nn/module/SFEB.py
+    64. TIP2026|engine/extre_module/custom_nn/module/FourierSR.py
+    65. CVPR2026｜engine/extre_module/custom_nn/module/FrequencyCM.py
+
+- engine/extre_module/custom_nn/neck
+
+    1. 自研模块|engine/extre_module/custom_nn/neck/FDPN.py(里面有三个自研模块FocusFeature、DynamicFrequencyFocusFeature、AlignmentGuidedFocusFeature)
+
+- engine/extre_module/custom_nn/neck_module
+
+    1. TPAMI2025|engine/extre_module/custom_nn/neck_module/HyperCompute.py
+    2. engine/extre_module/custom_nn/neck_module/HyperACE.py
+    3. engine/extre_module/custom_nn/neck_module/GoldYOLO.py
+    4. AAAI2025|engine/extre_module/custom_nn/neck_module/HS_FPN.py
+    5. engine/extre_module/custom_nn/neck_module/ASF.py
+    6. engine/extre_module/custom_nn/neck_module/CTrans.py
+    7. PR2026|engine/extre_module/custom_nn/neck_module/A3FPN.py
+
+- engine/extre_module/custom_nn/norm
+
+    1. ICML2024|engine/extre_module/custom_nn/transformer/repbn.py
+    2. CVPR2025|engine/extre_module/custom_nn/transformer/dyt.py
+    3. engine/extre_module/custom_nn/norm/derf.py
+
+- engine/extre_module/custom_nn/transformer
+
+    1. ICLR2025|engine/extre_module/custom_nn/transformer/PolaLinearAttention.py
+    2. CVPR2023|engine/extre_module/custom_nn/transformer/biformer.py
+    3. CVPR2023|engine/extre_module/custom_nn/transformer/CascadedGroupAttention.py
+    4. CVPR2022|engine/extre_module/custom_nn/transformer/DAttention.py
+    5. ICLR2022|engine/extre_module/custom_nn/transformer/DPBAttention.py
+    6. CVPR2024|engine/extre_module/custom_nn/transformer/AdaptiveSparseSA.py
+    7. engine/extre_module/custom_nn/transformer/GSA.py
+    8. engine/extre_module/custom_nn/transformer/RSA.py
+    9. ECCV2024|engine/extre_module/custom_nn/transformer/FSSA.py
+    10. AAAI2025|engine/extre_module/custom_nn/transformer/DilatedGCSA.py
+    11. AAAI2025|engine/extre_module/custom_nn/transformer/DilatedMWSA.py
+    12. CVPR2024|engine/extre_module/custom_nn/transformer/SHSA.py
+    13. IJCAI2024|engine/extre_module/custom_nn/transformer/CTA.py
+    14. IJCAI2024|engine/extre_module/custom_nn/transformer/SFA.py
+    15. engine/extre_module/custom_nn/transformer/MSLA.py
+    16. ACMMM2025|engine/extre_module/custom_nn/transformer/CPIA_SA.py
+    17. NN2025|engine/extre_module/custom_nn/transformer/TokenSelectAttention.py
+    18. CVPR2025|engine/extre_module/custom_nn/transformer/TAB.py
+    19. TPAMI2025|engine/extre_module/custom_nn/transformer/LRSA.py
+    20. ICCV2025|engine/extre_module/custom_nn/transformer/MALA.py
+    21. ICML2023|engine/extre_module/custom_nn/transformer/MUA.py
+    22. ACMMM2025|engine/extre_module/custom_nn/transformer/EGSA.py
+    23. ACMMM2025|engine/extre_module/custom_nn/transformer/SWSA.py
+    24. AAAI2026|engine/extre_module/custom_nn/transformer/DHOGSA.py
+    25. NeurIPS2025|engine/extre_module/custom_nn/transformer/CBSA.py
+    26. TGRS2025|engine/extre_module/custom_nn/transformer/DPWA.py
+    27. TIP2025|engine/extre_module/custom_nn/transformer/DWM_MSA.py
+    28. CVPR2026|engine/extre_module/custom_nn/transformer/BinaryAttention.py
+    29. CVPR2025|engine/extre_module/custom_nn/transformer/wca.py
+    30. 自研模块|engine/extre_module/custom_nn/transformer/ADHOGSA.py
+    31. AAAI2026|engine/extre_module/custom_nn/transformer/CirculantAttention.py
+    32. CVPR2026|engine/extre_module/custom_nn/transformer/WDAM.py
+
+- engine/extre_module/custom_nn/mlp
+
+    1. CVPR2024|engine/extre_module/custom_nn/mlp/ConvolutionalGLU.py
+    2. IJCAI2024|engine/extre_module/custom_nn/mlp/DFFN.py
+    3. ICLR2024|engine/extre_module/custom_nn/mlp/FMFFN.py
+    4. CVPR2024|engine/extre_module/custom_nn/mlp/FRFN.py
+    5. ECCV2024|engine/extre_module/custom_nn/mlp/EFFN.py 
+    6. WACV2025|engine/extre_module/custom_nn/mlp/SEFN.py
+    7. ICLR2025|engine/extre_module/custom_nn/mlp/KAN.py
+    8. CVPR2025|engine/extre_module/custom_nn/mlp/EDFFN.py
+    9. ICVJ2024|engine/extre_module/custom_nn/mlp/DML.py
+    10. AAAI2026|engine/extre_module/custom_nn/mlp/DIFF.py
+    11. 自研模块|engine/extre_module/custom_nn/mlp/MCCG.py
+    12. 自研模块|engine/extre_module/custom_nn/mlp/DSRG.py
+    13. CVPR2026｜engine/extre_module/custom_nn/mlp/AFFN.py
+
+- engine/extre_module/custom_nn/mamba
+
+    1. AAAI2025|engine/extre_module/custom_nn/mamba/SS2D.py
+    2. CVPR2025|engine/extre_module/custom_nn/mamba/ASSM.py
+    3. CVPR2025|engine/extre_module/custom_nn/mamba/SAVSS.py
+    4. CVPR2025|engine/extre_module/custom_nn/mamba/MobileMamba/mobilemamba.py
+    5. CVPR2025|engine/extre_module/custom_nn/mamba/MaIR.py
+    6. TGRS2025|engine/extre_module/custom_nn/mamba/GLVSS.py
+    7. ICCV2025|engine/extre_module/custom_nn/mamba/VSSD.py
+    8. ICCV2025|engine/extre_module/custom_nn/mamba/TinyViM.py
+    9. INFFUS2025|engine/extre_module/custom_nn/mamba/CSI.py
+    10. TIP2025|engine/extre_module/custom_nn/mamba/SFMB.py
+    11. TGRS2025|engine/extre_module/custom_nn/mamba/GLSS.py
+    12. TGRS2025|engine/extre_module/custom_nn/mamba/GLSS2D.py
+    13. CVPR2026|engine/extre_module/custom_nn/mamba/TransMixer.py
+    14. CVPR2026|engine/extre_module/custom_nn/mamba/sparse_state_space.py
+
+- engine/extre_module/custom_nn/moe
+
+    1. engine/extre_module/custom_nn/moe/moe_module.py
+
+- engine/extre_module/custom_nn/featurepreprocess
+
+    1. TGRS2025|engine/extre_module/custom_nn/featurepreprocess/FAENet.py
+
+- iou
+    
+    - GIoU：https://arxiv.org/abs/1902.09630
+    - DIoU / CIoU：https://arxiv.org/abs/1911.08287
+    - EIoU (Focal and Efficient IoU)：https://arxiv.org/abs/2101.08158
+    - SIoU：https://arxiv.org/abs/2205.12740
+    - Shape-IoU：https://arxiv.org/abs/2312.17663
+    - PIoU / PIoU2 (Powerful-IoU)：https://www.sciencedirect.com/science/article/abs/pii/S0893608023006640
+
+- 积木模块,示例教程engine/extre_module/custom_nn/module/example.py
+
+    1. YOLOV5|C3
+    2. YOLOV8|C2f
+    3. YOLO11|C3k2
+    4. TPAMI2025|MANet
+    5. TPAMI2024|MetaFormer_Block
+    6. TPAMI2024+CVPR2025|MetaFormer_Mona
+    7. TPAMI2024+CVPR2025+WACV2025|MetaFormer_SEFN
+    8. TPAMI2024+CVPR2025+WACV2025|MetaFormer_Mona_SEFN
+
+- 创新课程代码<标识着是那个课程中的代码，详细可以去看对应的课程视频>
+
+    1. 顶会中的Partial创新思想课程|engine/extre_module/innovate/CVPR2020_GhostConv.py
+    2. 顶会中的Partial创新思想课程|engine/extre_module/innovate/CVPR2023_PartialConv.py
+    3. CVPR2025-MobileMamba中的Long-Range WTB-Mamba二次创新|engine/extre_module/innovate/CVPR2025_MobileMamba.py
+    4. TGRS2025-HighFrequencyDirectionInjection创新思想课程|engine/extre_module/innovate/TGRS2025_HFDI.py

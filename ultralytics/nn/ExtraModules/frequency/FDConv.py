@@ -76,22 +76,26 @@ class FDConv(nn.Module):
         """
         B, C, H, W = x.shape
         device = x.device
+        dtype = x.dtype  # 保存原始 dtype (可能为 float16 under AMP)
+
+        # FFT 需要 float32 精度, 统一升精度处理
+        x_f32 = x.float()
 
         # ===================== 1. FFT + Shift =====================
         # 全 FFT (不是 rfft), 得到完整频谱
-        x_fft = torch.fft.fft2(x, norm="ortho")
+        x_fft = torch.fft.fft2(x_f32, norm="ortho")
         x_fft = torch.fft.fftshift(x_fft, dim=(-2, -1))  # DC 移至中心
 
         # ===================== 2. 频率距离网格 =====================
         # 归一化频率坐标 [-0.5, 0.5]
-        fy = torch.linspace(-0.5, 0.5, H, device=device).view(-1, 1)
-        fx = torch.linspace(-0.5, 0.5, W, device=device).view(1, -1)
+        fy = torch.linspace(-0.5, 0.5, H, device=device, dtype=torch.float32).view(-1, 1)
+        fx = torch.linspace(-0.5, 0.5, W, device=device, dtype=torch.float32).view(1, -1)
         dist = torch.sqrt(fx ** 2 + fy ** 2)  # (H, W): 到 DC 的距离
         max_dist = dist.max().item()  # 约 0.707
 
         # ===================== 3. 构建频带掩码 =====================
         # 边界: [0, sigmoid(e1), sigmoid(e2), ..., 1] * max_dist
-        edges = torch.sigmoid(self.band_edges)  # (n_bands-1,) 值在 (0,1)
+        edges = torch.sigmoid(self.band_edges.float())  # (n_bands-1,) 值在 (0,1)
         edges_sorted = torch.sort(edges)[0]
         all_edges = torch.cat([
             torch.zeros(1, device=device),
@@ -115,15 +119,15 @@ class FDConv(nn.Module):
         mod_imag = torch.zeros_like(dist).unsqueeze(0).unsqueeze(0)
         for i in range(self.n_bands):
             m = band_masks[i].unsqueeze(0).unsqueeze(0)  # (1, 1, H, W)
-            mod_real = mod_real + self.band_weight_real[..., i] * m
-            mod_imag = mod_imag + self.band_weight_imag[..., i] * m
+            mod_real = mod_real + self.band_weight_real[..., i].float() * m
+            mod_imag = mod_imag + self.band_weight_imag[..., i].float() * m
 
         weight = torch.complex(mod_real, mod_imag)  # (1, 1, H, W)
         x_fft_mod = x_fft * weight  # (B, C, H, W)
 
         # ===================== 5. IFFT 回空域 =====================
         x_fft_mod = torch.fft.ifftshift(x_fft_mod, dim=(-2, -1))
-        x_mod = torch.fft.ifft2(x_fft_mod, norm="ortho").real
+        x_mod = torch.fft.ifft2(x_fft_mod, norm="ortho").real.to(dtype)  # 恢复原始 dtype
 
         # ===================== 6. 标准卷积 =====================
         out = self.conv(x_mod)

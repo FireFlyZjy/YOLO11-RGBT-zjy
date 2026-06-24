@@ -91,27 +91,28 @@ class FADC(nn.Module):
         高梯度 -> 高频 (细节/边缘)
         低梯度 -> 低频 (平滑区域)
         """
-        # Sobel X
-        sobel = self.sobel_kernel.to(x.device)  # (1, 1, 3, 3)
+        # Sobel X — 统一用 float32 计算梯度, 避免 AMP/half 精度问题
+        sobel = self.sobel_kernel.to(device=x.device, dtype=torch.float32)  # (1, 1, 3, 3)
+        x_f32 = x.float()
         # 对每个通道分别做边缘检测, 取平均值
         grad_x = F.conv2d(
-            x.view(-1, 1, x.shape[2], x.shape[3]),
+            x_f32.view(-1, 1, x_f32.shape[2], x_f32.shape[3]),
             sobel,
             padding=1,
-        ).view(x.shape[0], x.shape[1], x.shape[2], x.shape[3])
+        ).view(x_f32.shape[0], x_f32.shape[1], x_f32.shape[2], x_f32.shape[3])
 
         # Sobel Y (旋转 90 度)
         sobel_y = sobel.transpose(-2, -1)
         grad_y = F.conv2d(
-            x.view(-1, 1, x.shape[2], x.shape[3]),
+            x_f32.view(-1, 1, x_f32.shape[2], x_f32.shape[3]),
             sobel_y,
             padding=1,
-        ).view(x.shape[0], x.shape[1], x.shape[2], x.shape[3])
+        ).view(x_f32.shape[0], x_f32.shape[1], x_f32.shape[2], x_f32.shape[3])
 
         # 梯度幅值, 通道间平均
         grad_magnitude = torch.sqrt(grad_x ** 2 + grad_y ** 2 + 1e-8)
         grad_magnitude = grad_magnitude.mean(dim=1, keepdim=True)  # (B, 1, H, W)
-        return grad_magnitude
+        return grad_magnitude.to(x.dtype)  # 恢复原始 dtype
 
     def forward(self, x):
         """前向传播:

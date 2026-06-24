@@ -84,7 +84,7 @@ class ACmix(nn.Module):
         h_out, w_out = h // self.stride, w // self.stride
 
         # attention path
-        pe = self.conv_p(position(h, w, x.is_cuda))
+        pe = self.conv_p(position(h, w, x.is_cuda).to(x.dtype))
         q_att = q.view(b * self.head, self.head_dim, h, w) * scaling
         k_att = k.view(b * self.head, self.head_dim, h, w)
         v_att = v.view(b * self.head, self.head_dim, h, w)
