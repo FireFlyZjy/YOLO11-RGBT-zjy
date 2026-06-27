@@ -21,7 +21,9 @@
       "Bash(mkdir -p /c/Users/Patrick/Desktop/DeepLearning/Code/YOLOv11to26-RGBT/ultralytics/cfg/models/26-RGBT/2026-06-21/fusion)",
       "Bash(mkdir -p /c/Users/Patrick/Desktop/DeepLearning/Code/YOLOv11to26-RGBT/ultralytics/cfg/models/26-RGBT/2026-06-21/conv)",
       "Bash(mkdir -p /c/Users/Patrick/Desktop/DeepLearning/Code/YOLOv11to26-RGBT/ultralytics/cfg/models/26-RGBT/2026-06-21/context)",
-      "Bash(tasklist)"
+      "Bash(tasklist)",
+      "Bash(D:\\\\Anaconda\\\\envs\\\\torch310\\\\python.exe -c \"from ultralytics.nn.ExtraModules.attention.BinaryAttention import BinaryAttention, BinaryChannelAttention, C3k2_BinaryAttention; print\\('导入测试通过'\\)\")",
+      "Bash(/d/Anaconda/envs/torch310/python.exe -c \"from ultralytics.nn.ExtraModules.attention.BinaryAttention import BinaryAttention, BinaryChannelAttention, C3k2_BinaryAttention; print\\('导入测试通过'\\)\")"
     ]
   }
 }

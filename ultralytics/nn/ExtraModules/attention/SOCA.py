@@ -129,6 +129,7 @@ class SOCA(nn.Module):
 
     def forward(self, x):
         x = self.conv(x)
+        dtype = x.dtype  # 保存原始 dtype (可能为 float16 under AMP)
         batch_size, C, h, w = x.shape
         h1, w1 = 1000, 1000
         if h < h1 and w < w1:
@@ -143,9 +144,10 @@ class SOCA(nn.Module):
             H = (h - h1) // 2
             W = (w - w1) // 2
             x_sub = x[:, :, H:(H + h1), W:(W + w1)]
-        cov_mat = CovpoolLayer(x_sub)
+        # 协方差池化 + 矩阵平方根 (内部矩阵运算可能产生 float32)
+        cov_mat = CovpoolLayer(x_sub.float())
         cov_mat_sqrt = SqrtmLayer(cov_mat, 5)
         cov_mat_sum = torch.mean(cov_mat_sqrt, 1)
-        cov_mat_sum = cov_mat_sum.view(batch_size, C, 1, 1)
+        cov_mat_sum = cov_mat_sum.view(batch_size, C, 1, 1).to(dtype)  # 恢复原始 dtype
         y_cov = self.conv_du(cov_mat_sum)
         return y_cov * x

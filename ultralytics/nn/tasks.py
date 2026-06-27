@@ -1167,6 +1167,13 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             # ================================================================
             Att_HAFFormer,       # HAFFormer: 层级注意力融合Transformer (DW-Conv QKV + 门控融合)
             Att_CrossAttention_M, # CrossAttention_M: 双向DW-Conv交叉注意力
+            Att_GatherExcite,    # GatherExcite: 局部/全局聚合+MLP通道门控 (比SE更灵活)
+            # ================================================================
+            # 2026-06-27 新增模块 (来自 CVPR2026 BinaryAttention)
+            # ================================================================
+            BinaryAttention,         # BinaryAttention: 1-bit QK注意力, 全局自注意力
+            BinaryChannelAttention,  # BinaryChannelAttention: 轻量级二值通道注意力
+            C3k2_BinaryAttention,    # C3k2_BinaryAttention: 集成BinaryAttention的C3k2
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments
