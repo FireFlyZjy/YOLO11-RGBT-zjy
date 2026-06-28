@@ -48,7 +48,7 @@ DEFAULT_MODEL_YAML = "ultralytics/cfg/models/26-RGBT/2026-05-14/yolo26-RGBT-midf
 
 # --- 训练结果保存 ---
 DEFAULT_PROJECT = "runs/FLIR/26dual-test"
-DEFAULT_NAME = "yolo26s-RGBT-midfusion-iAFF"
+DEFAULT_NAME = "00-test"
 
 # --- 数据集 ---
 DEFAULT_DATA = "ultralytics/cfg/datasets/flir.yaml"

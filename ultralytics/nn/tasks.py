@@ -1174,6 +1174,21 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             BinaryAttention,         # BinaryAttention: 1-bit QK注意力, 全局自注意力
             BinaryChannelAttention,  # BinaryChannelAttention: 轻量级二值通道注意力
             C3k2_BinaryAttention,    # C3k2_BinaryAttention: 集成BinaryAttention的C3k2
+            # ================================================================
+            # 2026-06-27 新增模块 (AFFN频域自相关融合)
+            # ================================================================
+            AFFN,            # AFFN: 频域自相关融合网络, FFT+自相关功率谱增强
+            C2PSA_AFFN,      # C2PSA_AFFN: 集成AFFN的C2PSA, 替换SPPF+C2PSA
+            # ================================================================
+            # 2026-06-27 新增模块 (来自 Flickerformer, 频域/相位注意力)
+            # ================================================================
+            PAM,             # PAM: 相位注意力模块, 只处理相位保留幅度
+            PhaseGuidedFilter, # PhaseGuidedFilter: 相位引导滤波器, 适合RGBT融合
+            FSAS,            # FSAS: 频域-空间自注意力, QK频域交互
+            SCAM,            # SCAM: 空间-通道注意力, 三路双向交叉注意力
+            C2PSA_PAM,       # C2PSA_PAM: 集成PAM的C2PSA
+            C2PSA_FSAS,      # C2PSA_FSAS: 集成FSAS的C2PSA
+            C2PSA_SCAM,      # C2PSA_SCAM: 集成SCAM的C2PSA
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments
@@ -1219,7 +1234,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                  Att_GroundTrans, Att_RenderTrans, vHeat_Fusion,
                  FCMMFusion, FCMBlockFusion,
                  DMAF, QualityWeightedFusion, EdgeBlendFusion, EI2Fusion,
-                 ASFFFusion, Att_HAFFormer, Att_CrossAttention_M):  # 多输入模块(from为列表), 在base_modules之前处理
+                 ASFFFusion, Att_HAFFormer, Att_CrossAttention_M,
+                 PhaseGuidedFilter):  # 多输入模块(from为列表), 在base_modules之前处理
             c1 = [ch[x] for x in f]
             c2 = args[0]
             args = [c1, c2, *args[1:]]

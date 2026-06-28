@@ -91,6 +91,12 @@ from .fusion.CrossAttention_M import *  # CrossAttention_M: 双向DW-Conv交叉�
 # 2026-06-27 新增模块 (来自 CVPR2026 BinaryAttention, 1-bit QK注意力)
 from .attention.BinaryAttention import *  # BinaryAttention: 1-bit量化注意力, C3k2_BinaryAttention
 
+# 2026-06-27 新增模块 (AFFN频域自相关融合)
+from .frequency.AFFN import *  # AFFN: 频域自相关融合网络, C2PSA_AFFN
+
+# 2026-06-27 新增模块 (Flickerformer频域/相位注意力)
+from .frequency.Flickerformer import *  # PAM, PhaseGuidedFilter, FSAS, SCAM
+
 # 2026-06-21 新增模块 (来自 yoloair-main)
 # --- attention/ 新增注意力 ---
 from .attention.CrissCross import *   # CrissCrossAttention: 十字交叉注意力
