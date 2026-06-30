@@ -97,6 +97,12 @@ from .frequency.AFFN import *  # AFFN: 频域自相关融合网络, C2PSA_AFFN
 # 2026-06-27 新增模块 (Flickerformer频域/相位注意力)
 from .frequency.Flickerformer import *  # PAM, PhaseGuidedFilter, FSAS, SCAM
 
+# 2026-06-27 新增模块 (PolyNeXt多项式神经网络)
+from .attention.PolyNeXt import *  # PolyAttention, PolyConv, C2PSA_PolyAttention, C3k2_PolyConv
+
+# 2026-06-30 新增模块 (WDAM小波双注意力)
+from .frequency.WDAM import *  # WDAM, C2PSA_WDAM
+
 # 2026-06-21 新增模块 (来自 yoloair-main)
 # --- attention/ 新增注意力 ---
 from .attention.CrissCross import *   # CrissCrossAttention: 十字交叉注意力
@@ -113,6 +119,10 @@ from .conv.Involution import *        # Involution: 逆卷积算子
 from .context.SPPCSPC import *        # SPPCSPC/SPPFCSPC: CSP增强SPP
 # --- fusion/ 新增融合 ---
 from .fusion.ASFFFusion import *      # ASFFFusion: 自适应空间特征融合(双模态)
+
+# 2026-06-30 新增模块 (来自 GeoFuse-YOLO, SOEP小目标增强金字塔)
+from .conv.SPDConv import *            # SPDConv: 空间到深度卷积, 保持分辨率的小目标增强
+from .conv.CSPOmniKernel import *      # CSPOmniKernel: CSP多尺度全方向卷积+频域门控
 
 # YOLO 包装器 (必须在独立模块之后导入)
 from .common import *

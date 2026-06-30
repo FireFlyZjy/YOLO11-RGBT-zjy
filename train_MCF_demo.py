@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
 
     # Step 2
-    model = YOLO('ultralytics/cfg/models/11-RGBT/yolo11n-RGBT-midfusion-MCF.yaml')
+    model = YOLO('ultralytics/cfg/models/others/11-RGBT/yolo11n-RGBT-midfusion-MCF.yaml')
     model.train(data=R'ultralytics/cfg/datasets/M3FD.yaml',
                 cache=False,
                 imgsz=640,

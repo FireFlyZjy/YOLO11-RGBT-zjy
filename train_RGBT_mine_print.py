@@ -27,7 +27,7 @@ if __name__ == '__main__':
     # 加载 YAML 配置，打印模型的详细结构、参数量(M)、FLOPs(G)
     # 用于快速查看模型结构，不进行训练
     # ============================================================================
-    model = YOLO('ultralytics/cfg/models/11/yolo11n.yaml')           # 模型 YAML 配置文件，可替换为其他模型
+    model = YOLO('ultralytics/cfg/models/others/11/yolo11n.yaml')           # 模型 YAML 配置文件，可替换为其他模型
 
     # 也可以直接加载训练好的权重文件查看信息
     # model = YOLO('runs/dota8/dota8-yolo11n-RGBT-midfusion-obb-e300-16-27/weights/best.pt')

@@ -6,7 +6,7 @@ from ultralytics.nn.tasks import DetectionModel
 # 辅助头部分的代码从魔鬼面具v11代码里面复制，已和魔导沟通确认，具体请参考  https://github.com/z1069614715/objectdetection_script
 if __name__ == '__main__':
     model_PGI_weights_path = 'runs/train/yolo11n-PGI/weights/best.pt'
-    model_cfg_path = "ultralytics/cfg/models/11/yolo11n.yaml"
+    model_cfg_path = "ultralytics/cfg/models/others/11/yolo11n.yaml"
     layer_num, pgi_layer_num = 23, 39
     
     device = torch.device("cpu")

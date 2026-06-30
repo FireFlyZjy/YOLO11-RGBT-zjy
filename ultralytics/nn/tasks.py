@@ -1189,6 +1189,24 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C2PSA_PAM,       # C2PSA_PAM: 集成PAM的C2PSA
             C2PSA_FSAS,      # C2PSA_FSAS: 集成FSAS的C2PSA
             C2PSA_SCAM,      # C2PSA_SCAM: 集成SCAM的C2PSA
+            # ================================================================
+            # 2026-06-27 新增模块 (来自 PolyNeXt, ICLR2024 多项式神经网络)
+            # ================================================================
+            PolyAttention,   # PolyAttention: 多项式注意力, ((q@k.T)*scale+1)^4 替代softmax
+            PolyConv,        # PolyConv: 多项式卷积, conv1(x)*conv2(x).flip(dims=[1])
+            PolyMLP,         # PolyMLP: 多项式MLP, high*low门控交互
+            C2PSA_PolyAttention, # C2PSA_PolyAttention: 集成PolyAttention的C2PSA
+            C3k2_PolyConv,   # C3k2_PolyConv: 集成PolyConv的C3k2
+            # ================================================================
+            # 2026-06-30 新增模块 (WDAM小波双注意力)
+            # ================================================================
+            WDAM,            # WDAM: 小波双注意力, DWT分解+窗口注意力+高频卷积
+            C2PSA_WDAM,      # C2PSA_WDAM: 集成WDAM的C2PSA
+            # ================================================================
+            # 2026-06-30 新增模块 (来自 GeoFuse-YOLO, SOEP小目标增强金字塔)
+            # ================================================================
+            SPDConv,          # SPDConv: 空间到深度卷积, 保持分辨率的小目标增强
+            CSPOmniKernel,    # CSPOmniKernel: CSP多尺度全方向卷积+频域门控, 轻量C3k2替代
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments

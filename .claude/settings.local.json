@@ -25,7 +25,9 @@
       "Bash(D:\\\\Anaconda\\\\envs\\\\torch310\\\\python.exe -c \"from ultralytics.nn.ExtraModules.attention.BinaryAttention import BinaryAttention, BinaryChannelAttention, C3k2_BinaryAttention; print\\('导入测试通过'\\)\")",
       "Bash(/d/Anaconda/envs/torch310/python.exe -c \"from ultralytics.nn.ExtraModules.attention.BinaryAttention import BinaryAttention, BinaryChannelAttention, C3k2_BinaryAttention; print\\('导入测试通过'\\)\")",
       "Bash(/d/Anaconda/envs/torch310/python.exe -c \"from ultralytics.nn.ExtraModules.frequency.AFFN import AFFN, C2PSA_AFFN; print\\('导入测试通过'\\)\")",
-      "Bash(/d/Anaconda/envs/torch310/python.exe tools/generate_module_list.py)"
+      "Bash(/d/Anaconda/envs/torch310/python.exe tools/generate_module_list.py)",
+      "Bash(D:\\\\Anaconda\\\\envs\\\\torch310\\\\python.exe -c \"from ultralytics.nn.ExtraModules.frequency.WDAM import WDAM, C2PSA_WDAM; print\\('Import OK'\\)\")",
+      "Bash(/d/Anaconda/envs/torch310/python.exe -c \"from ultralytics.nn.ExtraModules.frequency.WDAM import WDAM, C2PSA_WDAM; print\\('Import OK'\\)\")"
     ]
   }
 }

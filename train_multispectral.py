@@ -25,7 +25,7 @@ if __name__ == '__main__':
     #             name='coco8-multispectral-yolo11-RGBT-earlyfusion-10c-',
     #             )
 
-    model = YOLO('ultralytics/cfg/models/11-RGBT/yolo11-RGBT-earlyfusion-7c.yaml')
+    model = YOLO('ultralytics/cfg/models/others/11-RGBT/yolo11-RGBT-earlyfusion-7c.yaml')
     # model.info(True,True)
     model.load('yolo11n.pt')  # loading pretrain weights
     model.train(data=R'ultralytics/cfg/datasets/multispectral-16bit-7ch-2c.yaml',
