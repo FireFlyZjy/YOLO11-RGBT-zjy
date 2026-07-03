@@ -1203,6 +1203,11 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             WDAM,            # WDAM: 小波双注意力, DWT分解+窗口注意力+高频卷积
             C2PSA_WDAM,      # C2PSA_WDAM: 集成WDAM的C2PSA
             # ================================================================
+            # 2026-07-03 新增模块 (C2Former跨模态可变形交叉注意力)
+            # ================================================================
+            C2Former_Fusion, # C2Former_Fusion: 双向可变形交叉注意力融合
+            C2PSA_C2Former,  # C2PSA_C2Former: 集成C2Former的C2PSA
+            # ================================================================
             # 2026-06-30 新增模块 (来自 GeoFuse-YOLO, SOEP小目标增强金字塔)
             # ================================================================
             SPDConv,          # SPDConv: 空间到深度卷积, 保持分辨率的小目标增强
@@ -1253,7 +1258,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                  FCMMFusion, FCMBlockFusion,
                  DMAF, QualityWeightedFusion, EdgeBlendFusion, EI2Fusion,
                  ASFFFusion, Att_HAFFormer, Att_CrossAttention_M,
-                 PhaseGuidedFilter):  # 多输入模块(from为列表), 在base_modules之前处理
+                 PhaseGuidedFilter, C2Former_Fusion):  # 多输入模块(from为列表), 在base_modules之前处理
             c1 = [ch[x] for x in f]
             c2 = args[0]
             args = [c1, c2, *args[1:]]

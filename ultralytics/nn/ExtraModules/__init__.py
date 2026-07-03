@@ -103,6 +103,9 @@ from .attention.PolyNeXt import *  # PolyAttention, PolyConv, C2PSA_PolyAttentio
 # 2026-06-30 新增模块 (WDAM小波双注意力)
 from .frequency.WDAM import *  # WDAM, C2PSA_WDAM
 
+# 2026-07-03 新增模块 (C2Former跨模态可变形交叉注意力)
+from .fusion.C2Former import *  # C2Former_Fusion, C2PSA_C2Former
+
 # 2026-06-21 新增模块 (来自 yoloair-main)
 # --- attention/ 新增注意力 ---
 from .attention.CrissCross import *   # CrissCrossAttention: 十字交叉注意力
