@@ -106,6 +106,9 @@ from .frequency.WDAM import *  # WDAM, C2PSA_WDAM
 # 2026-07-03 新增模块 (C2Former跨模态可变形交叉注意力)
 from .fusion.C2Former import *  # C2Former_Fusion, C2PSA_C2Former
 
+# 2026-07-03 新增模块 (MARSS: CVPR2026 雷达语义分割模块)
+from .fusion.MARSS import *  # REM, RADE, RFAF_Fusion, RADM, C2PSA_RADM
+
 # 2026-06-21 新增模块 (来自 yoloair-main)
 # --- attention/ 新增注意力 ---
 from .attention.CrissCross import *   # CrissCrossAttention: 十字交叉注意力

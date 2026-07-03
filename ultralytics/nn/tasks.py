@@ -1208,6 +1208,14 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C2Former_Fusion, # C2Former_Fusion: 双向可变形交叉注意力融合
             C2PSA_C2Former,  # C2PSA_C2Former: 集成C2Former的C2PSA
             # ================================================================
+            # 2026-07-03 新增模块 (MARSS: CVPR2026 雷达语义分割模块)
+            # ================================================================
+            REM,             # REM: 小波增强模块, 轴向卷积模拟四子带分解
+            RADE,            # RADE: 雷达感知去噪编码器, 通道+空间注意力级联
+            RFAF_Fusion,     # RFAF_Fusion: 雷达特征自适应融合, 十字形感受野+多尺度空洞卷积
+            RADM,            # RADM: 状态空间解码模块, 轴向自注意力+DWConv
+            C2PSA_RADM,      # C2PSA_RADM: 集成RADM的C2PSA
+            # ================================================================
             # 2026-06-30 新增模块 (来自 GeoFuse-YOLO, SOEP小目标增强金字塔)
             # ================================================================
             SPDConv,          # SPDConv: 空间到深度卷积, 保持分辨率的小目标增强
@@ -1258,7 +1266,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                  FCMMFusion, FCMBlockFusion,
                  DMAF, QualityWeightedFusion, EdgeBlendFusion, EI2Fusion,
                  ASFFFusion, Att_HAFFormer, Att_CrossAttention_M,
-                 PhaseGuidedFilter, C2Former_Fusion):  # 多输入模块(from为列表), 在base_modules之前处理
+                 PhaseGuidedFilter, C2Former_Fusion,
+                 RFAF_Fusion):  # 多输入模块(from为列表), 在base_modules之前处理
             c1 = [ch[x] for x in f]
             c2 = args[0]
             args = [c1, c2, *args[1:]]
