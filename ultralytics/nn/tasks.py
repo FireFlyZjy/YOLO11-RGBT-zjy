@@ -1225,6 +1225,12 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             # ================================================================
             CKConv,           # CKConv: 多尺度十字形卷积核, 轴向卷积+多尺度并行
             C3k2_CKConv,      # C3k2_CKConv: 集成CKConv的C3k2
+            # ================================================================
+            # 2026-07-05 新增模块 (CROWn微观多相共注意力)
+            # ================================================================
+            μPCAD_2D,         # μPCAD_2D: 微观多相共注意力降采样器, 小波+跨源注意力
+            C2PSA_μPCAD,      # C2PSA_μPCAD: 集成μPCAD的C2PSA
+            CrossSourceMHA,   # CrossSourceMHA: 跨源多头注意力
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments

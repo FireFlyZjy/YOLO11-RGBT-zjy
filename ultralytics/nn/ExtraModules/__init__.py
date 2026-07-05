@@ -112,6 +112,9 @@ from .fusion.MARSS import *  # REM, RADE, RFAF_Fusion, RADM, C2PSA_RADM
 # 2026-07-05 新增模块 (CKConv多尺度十字形卷积)
 from .conv.CKConv import *  # CKConv, C3k2_CKConv
 
+# 2026-07-05 新增模块 (CROWn微观多相共注意力)
+from .frequency.CROWn import *  # μPCAD_2D, C2PSA_μPCAD, CrossSourceMHA
+
 # 2026-06-21 新增模块 (来自 yoloair-main)
 # --- attention/ 新增注意力 ---
 from .attention.CrissCross import *   # CrissCrossAttention: 十字交叉注意力
