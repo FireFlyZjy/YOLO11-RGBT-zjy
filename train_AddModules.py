@@ -244,6 +244,9 @@ def main():
     if not args.ema:
         model.add_callback("on_train_start", lambda t: setattr(t, 'ema', _DummyEMA(t.model)))
 
+    # 预创建保存目录，避免 Ultralytics 内部保存 results.csv 时父目录不存在
+    Path(args.project, args.name).mkdir(parents=True, exist_ok=True)
+
     train_result = model.train(**common_train_args)
 
     # ---- 步骤3: 验证训练好的模型 ----

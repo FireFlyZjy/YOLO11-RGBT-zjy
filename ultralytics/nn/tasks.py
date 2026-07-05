@@ -1220,6 +1220,11 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             # ================================================================
             SPDConv,          # SPDConv: 空间到深度卷积, 保持分辨率的小目标增强
             CSPOmniKernel,    # CSPOmniKernel: CSP多尺度全方向卷积+频域门控, 轻量C3k2替代
+            # ================================================================
+            # 2026-07-05 新增模块 (CKConv多尺度十字形卷积)
+            # ================================================================
+            CKConv,           # CKConv: 多尺度十字形卷积核, 轴向卷积+多尺度并行
+            C3k2_CKConv,      # C3k2_CKConv: 集成CKConv的C3k2
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments
