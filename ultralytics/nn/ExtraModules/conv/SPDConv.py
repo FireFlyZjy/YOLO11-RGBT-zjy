@@ -19,7 +19,7 @@ SPDConv — 空间到深度卷积 (Space-to-Depth Conv)
 import torch
 import torch.nn as nn
 
-from ..modules.conv import Conv
+from ...modules.conv import Conv
 
 
 class SPDConv(nn.Module):
