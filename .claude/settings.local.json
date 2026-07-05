@@ -29,7 +29,10 @@
       "Bash(D:\\\\Anaconda\\\\envs\\\\torch310\\\\python.exe -c \"from ultralytics.nn.ExtraModules.frequency.WDAM import WDAM, C2PSA_WDAM; print\\('Import OK'\\)\")",
       "Bash(/d/Anaconda/envs/torch310/python.exe -c \"from ultralytics.nn.ExtraModules.frequency.WDAM import WDAM, C2PSA_WDAM; print\\('Import OK'\\)\")",
       "Bash(/d/Anaconda/envs/torch310/python.exe -c \"from ultralytics.nn.ExtraModules.fusion.C2Former import C2Former_Fusion, C2PSA_C2Former, ModalityNorm; print\\('Import OK'\\)\")",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m 'feat: 新增 2026-07-05 模块集合 \\(CKConv, CROWn, RT-SFOD\\) *)",
+      "Bash(git push *)",
+      "Bash(git commit -m 'chore: 更新 Git 推送流程规范 *)"
     ]
   }
 }
