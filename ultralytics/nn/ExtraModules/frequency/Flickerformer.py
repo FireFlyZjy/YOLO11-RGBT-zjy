@@ -79,14 +79,16 @@ class PAM(nn.Module):
         # 通道对齐
         x = self.channel_align(x)
         _, _, H, W = x.shape
+        input_dtype = x.dtype  # 保存输入类型，最后恢复
 
-        # FFT
+        # FFT（需要 float32，不支持 half）
         x_freq = torch.fft.rfft2(x.float(), norm='backward')
         mag = torch.abs(x_freq)
         pha = torch.angle(x_freq)
 
-        # 处理相位（保留幅度不变）
-        pha = self.process(pha)
+        # 处理相位 — 确保与模型权重的 dtype 一致
+        weight_dtype = next(self.process.parameters()).dtype
+        pha = self.process(pha.to(dtype=weight_dtype))
 
         # 重建频域
         real = mag * torch.cos(pha)
@@ -96,7 +98,7 @@ class PAM(nn.Module):
         # IFFT
         x_out = torch.fft.irfft2(x_out, s=(H, W), norm='backward')
 
-        return x_out.to(dtype=x.dtype)
+        return x_out.to(dtype=input_dtype)
 
 
 # ====================== PhaseGuidedFilter: 相位引导滤波器 ======================
@@ -166,8 +168,9 @@ class PhaseGuidedFilter(nn.Module):
         # 计算相位自相关性
         phase_corr = torch.abs(phase * torch.conj(phase))
 
-        # 引导权重
-        guide = self.guide_net(phase_corr)
+        # 引导权重 — 确保与模型权重的 dtype 一致
+        weight_dtype = next(self.guide_net.parameters()).dtype
+        guide = self.guide_net(phase_corr.to(dtype=weight_dtype))
 
         # 引导滤波
         x_filtered = guide * x_freq
@@ -225,14 +228,15 @@ class FSAS(nn.Module):
         out_fft = q_fft * k_fft
         out = torch.fft.irfft2(out_fft, s=(H, W))
 
-        # LayerNorm
+        # LayerNorm — 先恢复输入 dtype
         out = self.norm(out.to(dtype=x.dtype))
 
         # V空间调制
         output = v * out
 
-        # 输出投影
-        output = self.project_out(output)
+        # 输出投影 — 确保与模型权重的 dtype 一致
+        weight_dtype = next(self.project_out.parameters()).dtype
+        output = self.project_out(output.to(dtype=weight_dtype))
 
         return output
 
