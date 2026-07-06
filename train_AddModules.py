@@ -44,11 +44,11 @@ class _DummyEMA:
 
 # --- 模型配置 ---
 # 模型 YAML 配置文件路径
-DEFAULT_MODEL_YAML = "ultralytics/cfg/models/26-RGBT/2026-06-27/flickerformer/yolo26-RGBT-midfusion-SCAM.yaml"
+DEFAULT_MODEL_YAML = "ultralytics/cfg/models/26-RGBT/2026-06-27/flickerformer/yolo26-RGBT-midfusion-PhaseGuidedFilter.yaml"
 
 # --- 训练结果保存 ---
 DEFAULT_PROJECT = "runs/FLIR/26dual-test"
-DEFAULT_NAME = "yolo26s-RGBT-midfusion-SCAM"
+DEFAULT_NAME = "yolo26s-RGBT-midfusion-PhaseGuidedFilter"
 
 # --- 数据集 ---
 DEFAULT_DATA = "ultralytics/cfg/datasets/flir.yaml"
@@ -244,19 +244,27 @@ def main():
     if not args.ema:
         model.add_callback("on_train_start", lambda t: setattr(t, 'ema', _DummyEMA(t.model)))
 
-    # 预创建保存目录，避免 Ultralytics 内部保存 results.csv 时父目录不存在
-    Path(args.project, args.name).mkdir(parents=True, exist_ok=True)
-
     train_result = model.train(**common_train_args)
+
+    # ---- 获取 Ultralytics 实际使用的训练目录 ----
+    # 当名称已存在时 Ultralytics 会自动追加后缀(如 name2, name3)
+    if hasattr(model, 'trainer') and model.trainer is not None:
+        actual_save_dir = Path(model.trainer.save_dir)
+    else:
+        # fallback: 找最近匹配的目录
+        candidates = sorted(Path(args.project).glob(f"{args.name}*"))
+        actual_save_dir = candidates[-1] if candidates else Path(args.project) / args.name
+    actual_name = actual_save_dir.name
+    print(f"  实际保存目录: {actual_save_dir}")
 
     # ---- 步骤3: 验证训练好的模型 ----
     print("\n[Step 3/4] Validating trained model...")
 
-    # 训练后 best.pt 的路径: project/name/weights/best.pt
-    best_pt = Path(args.project) / args.name / "weights" / "best.pt"
+    # 训练后 best.pt 的路径: 使用实际保存目录
+    best_pt = actual_save_dir / "weights" / "best.pt"
     if not best_pt.exists():
         # 尝试 last.pt
-        best_pt = Path(args.project) / args.name / "weights" / "last.pt"
+        best_pt = actual_save_dir / "weights" / "last.pt"
 
     if best_pt.exists():
         best_pt_str = str(best_pt)
@@ -387,7 +395,7 @@ def main():
                 "imgsz": str(args.imgsz),
                 "Data": args.data,
                 "Project": args.project,
-                "Name": args.name,
+                "Name": actual_name,
             })
 
         print(f"\nResults appended to: {csv_path}")
