@@ -69,7 +69,8 @@ class AFFN(nn.Module):
         Xf = torch.fft.rfft2(x_float)
 
         # 自相关功率谱: R(k) = Xf(k) * conj(Xf(k))
-        power = Xf * torch.conj(Xf)
+        # 归一化防止数值爆炸: |Xf|^2 / (H*W) 保持量级稳定
+        power = Xf * torch.conj(Xf) / (H * W)
 
         # 自相关逆变换 (空间域)
         R = torch.fft.irfft2(power, s=(H, W))
