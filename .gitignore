@@ -181,3 +181,6 @@ calibration_*.npy
 /ultralytics/cfg/datasets/dota8_MINE.yaml
 /val2.py
 /heatmap_RGBT_test.py
+
+# CSV 训练/验证结果（自动生成，不跟踪）
+runs/*.csv
