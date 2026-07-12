@@ -214,14 +214,17 @@ class C2FormerModule(nn.Module):
         vis_pos = reference + offset.permute(0, 2, 3, 1)
         lwir_pos = reference
 
-        # 可变形采样
+        # 可变形采样（确保 grid 与 input 的 dtype 一致，避免 AMP half 问题）
+        vis_x_reshaped = vis_x.reshape(B * self.n_groups, self.n_group_channels, H, W)
+        lwir_x_reshaped = lwir_x.reshape(B * self.n_groups, self.n_group_channels, H, W)
+        grid_dtype = vis_x_reshaped.dtype
         vis_x_sampled = F.grid_sample(
-            vis_x.reshape(B * self.n_groups, self.n_group_channels, H, W),
-            vis_pos[..., (1, 0)], mode='bilinear', align_corners=True
+            vis_x_reshaped,
+            vis_pos[..., (1, 0)].to(dtype=grid_dtype), mode='bilinear', align_corners=True
         )
         lwir_x_sampled = F.grid_sample(
-            lwir_x.reshape(B * self.n_groups, self.n_group_channels, H, W),
-            lwir_pos[..., (1, 0)], mode='bilinear', align_corners=True
+            lwir_x_reshaped,
+            lwir_pos[..., (1, 0)].to(dtype=grid_dtype), mode='bilinear', align_corners=True
         )
 
         # Reshape 为序列
