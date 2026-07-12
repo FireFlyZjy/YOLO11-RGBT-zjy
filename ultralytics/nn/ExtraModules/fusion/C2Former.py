@@ -129,7 +129,7 @@ class C2FormerModule(nn.Module):
         proj_drop: 投影 dropout
     """
     def __init__(self, nc, num_heads=8, n_groups=1, offset_range_factor=2,
-                 attn_drop=0.0, proj_drop=0.0, kernel_size=5):
+                 attn_drop=0.0, proj_drop=0.0, kernel_size=5, sr_ratio=1):
         super().__init__()
         self.nc = nc
         self.num_heads = num_heads
@@ -138,6 +138,11 @@ class C2FormerModule(nn.Module):
         self.n_groups = n_groups
         self.n_group_channels = nc // n_groups
         self.offset_range_factor = offset_range_factor
+        self.sr_ratio = sr_ratio
+        if sr_ratio > 1:
+            self.sr = nn.AvgPool2d(kernel_size=sr_ratio, stride=sr_ratio)
+        else:
+            self.sr = nn.Identity()
 
         # Offset 预测网络
         self.conv_offset = nn.Sequential(
@@ -224,6 +229,16 @@ class C2FormerModule(nn.Module):
         vis_x_sampled = vis_x_sampled.reshape(B, C, 1, n_sample)
         lwir_x_sampled = lwir_x_sampled.reshape(B, C, 1, n_sample)
 
+        # ---- Key/Value 空间下采样（大幅降低注意力矩阵大小） ----
+        if self.sr_ratio > 1:
+            vis_grid = vis_x_sampled.reshape(B, C, H, W)
+            lwir_grid = lwir_x_sampled.reshape(B, C, H, W)
+            vis_grid = self.sr(vis_grid)
+            lwir_grid = self.sr(lwir_grid)
+            n_sample = vis_grid.shape[2] * vis_grid.shape[3]
+            vis_x_sampled = vis_grid.reshape(B, C, 1, n_sample)
+            lwir_x_sampled = lwir_grid.reshape(B, C, 1, n_sample)
+
         # 双向交叉注意力
         # VIS 查询 IR: q 来自 ModalityNorm(vis, lwir), k/v 来自采样后的 vis
         q_lwir = self.proj_q_lwir(self.vis_MN(vis_x, lwir_x))
@@ -277,7 +292,7 @@ class C2Former_Fusion(nn.Module):
         kernel_size: offset 卷积核大小 (默认 5)
     """
     def __init__(self, c1, c2, num_heads=8, n_groups=1, offset_range_factor=2,
-                 attn_drop=0.0, proj_drop=0.0, kernel_size=5):
+                 attn_drop=0.0, proj_drop=0.0, kernel_size=5, sr_ratio=8):
         super().__init__()
         if isinstance(c1, (list, tuple)):
             c_vis, c_ir = c1[0], c1[1]
@@ -288,7 +303,7 @@ class C2Former_Fusion(nn.Module):
         self.proj_vis = nn.Conv2d(c_vis, c2, 1) if c_vis != c2 else nn.Identity()
         self.proj_ir = nn.Conv2d(c_ir, c2, 1) if c_ir != c2 else nn.Identity()
 
-        # C2Former 核心模块
+        # C2Former 核心模块（sr_ratio=8: 160x160→20x20, 注意力矩阵缩小64x）
         self.c2former = C2FormerModule(
             nc=c2,
             num_heads=num_heads,
@@ -296,7 +311,8 @@ class C2Former_Fusion(nn.Module):
             offset_range_factor=offset_range_factor,
             attn_drop=attn_drop,
             proj_drop=proj_drop,
-            kernel_size=kernel_size
+            kernel_size=kernel_size,
+            sr_ratio=sr_ratio
         )
 
     def forward(self, x):
@@ -367,7 +383,8 @@ class C2FormerSingle(nn.Module):
     将输入分割为两半，分别作为 vis 和 ir 进行交叉注意力
     不使用可变形采样，使用标准注意力
     """
-    def __init__(self, nc, num_heads=8, n_groups=1, offset_range_factor=2, kernel_size=5):
+    def __init__(self, nc, num_heads=8, n_groups=1, offset_range_factor=2,
+                 kernel_size=5, sr_ratio=8):
         super().__init__()
         self.nc = nc
         self.num_heads = num_heads
@@ -375,6 +392,11 @@ class C2FormerSingle(nn.Module):
         self.half_nc = nc // 2
         self.n_head_channels = self.half_nc // num_heads
         self.scale = self.n_head_channels ** -0.5
+        self.sr_ratio = sr_ratio
+        if sr_ratio > 1:
+            self.sr = nn.AvgPool2d(kernel_size=sr_ratio, stride=sr_ratio)
+        else:
+            self.sr = nn.Identity()
 
         # QKV 投影 (使用 half_nc)
         self.proj_q_vis = nn.Conv2d(self.half_nc, self.half_nc, 1, 1, 0)
@@ -398,18 +420,26 @@ class C2FormerSingle(nn.Module):
         # 分割通道为两半
         vis_x, lwir_x = x.split(self.half_nc, dim=1)
 
-        n_sample = H * W
+        # ---- Key/Value 空间下采样 ----
+        if self.sr_ratio > 1:
+            vis_pooled = self.sr(vis_x)
+            lwir_pooled = self.sr(lwir_x)
+            n_sampled = vis_pooled.shape[2] * vis_pooled.shape[3]
+        else:
+            vis_pooled = vis_x
+            lwir_pooled = lwir_x
+            n_sampled = H * W
 
         # QKV
         q_lwir = self.proj_q_lwir(self.vis_MN(vis_x, lwir_x))
         q_lwir = q_lwir.reshape(B * self.num_heads, self.n_head_channels, H * W)
-        k_vis = self.proj_k_vis(vis_x).reshape(B * self.num_heads, self.n_head_channels, n_sample)
-        v_vis = self.proj_v_vis(vis_x).reshape(B * self.num_heads, self.n_head_channels, n_sample)
+        k_vis = self.proj_k_vis(vis_pooled).reshape(B * self.num_heads, self.n_head_channels, n_sampled)
+        v_vis = self.proj_v_vis(vis_pooled).reshape(B * self.num_heads, self.n_head_channels, n_sampled)
 
         q_vis = self.proj_q_vis(self.lwir_MN(lwir_x, vis_x))
         q_vis = q_vis.reshape(B * self.num_heads, self.n_head_channels, H * W)
-        k_lwir = self.proj_k_lwir(lwir_x).reshape(B * self.num_heads, self.n_head_channels, n_sample)
-        v_lwir = self.proj_v_lwir(lwir_x).reshape(B * self.num_heads, self.n_head_channels, n_sample)
+        k_lwir = self.proj_k_lwir(lwir_pooled).reshape(B * self.num_heads, self.n_head_channels, n_sampled)
+        v_lwir = self.proj_v_lwir(lwir_pooled).reshape(B * self.num_heads, self.n_head_channels, n_sampled)
 
         # 注意力计算 (VIS -> IR)
         attn_vis = torch.einsum('b c m, b c n -> b m n', q_lwir, k_vis)
