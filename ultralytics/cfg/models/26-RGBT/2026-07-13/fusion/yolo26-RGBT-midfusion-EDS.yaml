@@ -1,0 +1,66 @@
+# Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
+
+# EDS: Edge-aware Dynamic Sampling Fusion
+# 改动: 层21/22/23 Concat → EDS (空洞率1/3/5/7多尺度融合)
+# 原位替换, 无层号位移
+#
+# EDS 核心机制:
+#   1. RGB×IR 乘积 + RGB+IR 求和双路径
+#   2. 4分支空洞卷积 (dilation=1,3,5,7) 捕获多尺度边缘
+#   3. 拼接 + 融合卷积
+#
+# 对 RGBT 价值: 小空洞捕获RGB纹理, 大空洞捕获Thermal热辐射轮廓
+
+nc: 3
+scales:
+  s: [0.50, 0.50, 1024]
+
+ch: 4
+
+backbone:
+  - [-1, 1, Silence, []]  # 0
+  - [0, 1, SilenceChannel, [0,3]]  # 1-vis
+  - [-1, 1, Conv, [64, 3, 2]]
+  - [-1, 1, Conv, [128, 3, 2]]
+  - [-1, 2, C3k2, [256, False, 0.25]]
+  - [-1, 1, Conv, [256, 3, 2]] # 5-P3/8
+  - [-1, 2, C3k2, [512, False, 0.25]]
+  - [-1, 1, Conv, [512, 3, 2]] # 7-P4/16
+  - [-1, 2, C3k2, [512, True]]
+  - [-1, 1, Conv, [1024, 3, 2]] # 9-P5/32
+  - [-1, 2, C3k2, [1024, True, 0.5, True]] # 10
+
+  # infrared
+  - [0, 1, SilenceChannel, [3,4]]  # 11-ir
+  - [-1, 1, Conv, [64, 3, 2]]
+  - [-1, 1, Conv, [128, 3, 2]]
+  - [-1, 2, C3k2, [256, False, 0.25]]
+  - [-1, 1, Conv, [256, 3, 2]] # 15-P3/8
+  - [-1, 2, C3k2, [512, False, 0.25]]
+  - [-1, 1, Conv, [512, 3, 2]] # 17-P4/16
+  - [-1, 2, C3k2, [512, True]]
+  - [-1, 1, Conv, [1024, 3, 2]] # 19-P5/32
+  - [-1, 2, C3k2, [1024, True, 0.5, True]] # 20
+
+  # Fusion: Concat → EDS
+  - [[6, 16], 1, EDS, [256]]  # 21 P3 fusion
+  - [[8, 18], 1, EDS, [512]]  # 22 P4 fusion
+  - [[10, 20], 1, EDS, [1024]]  # 23 P5 fusion
+
+  - [-1, 1, SPPF, [1024, 5, 3, True]] # 24
+  - [-1, 2, C2PSA, [1024]] # 25
+
+head:
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 22], 1, Concat, [1]]
+  - [-1, 2, C3k2, [512, False]] # 28
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]
+  - [[-1, 21], 1, Concat, [1]]
+  - [-1, 2, C3k2, [256, False]] # 31
+  - [-1, 1, Conv, [256, 3, 2]]
+  - [[-1, 28], 1, Concat, [1]]
+  - [-1, 2, C3k2, [512, False]] # 34
+  - [-1, 1, Conv, [512, 3, 2]]
+  - [[-1, 25], 1, Concat, [1]]
+  - [-1, 2, C3k2, [1024, True, 0.5, True]] # 37
+  - [[31, 34, 37], 1, Detect, [nc]]

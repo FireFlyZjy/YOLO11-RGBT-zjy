@@ -185,3 +185,5 @@ calibration_*.npy
 
 # CSV 训练/验证结果（自动生成，不跟踪）
 runs/*.csv
+.reasonix/
+exps/

@@ -1231,6 +1231,25 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             μPCAD_2D,         # μPCAD_2D: 微观多相共注意力降采样器, 小波+跨源注意力
             C2PSA_μPCAD,      # C2PSA_μPCAD: 集成μPCAD的C2PSA
             CrossSourceMHA,   # CrossSourceMHA: 跨源多头注意力
+            # ================================================================
+            # 2026-07-07 新增模块 (HVPNet: RGB-T 显著目标检测)
+            # ================================================================
+            SRA,              # SRA: Strip Recurrent Attention, 条带H/W方向注意力
+            SCA,              # SCA: Spatial-Channel RGB-T Fusion, 多输入融合
+            GFM,              # GFM: Global Fusion Module, 全局融合
+            EDS,              # EDS: Edge-aware Dynamic Sampling, 边缘感知融合
+            HA,               # HA: Holistic Attention, 全局注意力精炼
+            RFBBranch,        # RFBBranch: 4分支非对称RFB(与BasicRFB不同)
+            COI,              # COI: Conv-One-Identity 三重残差
+            # ================================================================
+            # 2026-07-07 新增模块 (rmae-progress + HVPNet: 渐进式特征聚合)
+            # ================================================================
+            ProgressiveAgg,   # ProgressiveAgg: 渐进式多尺度特征聚合(PLF+LCAR)
+            Aggregation,      # Aggregation: 3尺度密集注意力聚合
+            # ================================================================
+            # 2026-07-07 新增模块 (UCMNet: 记忆增强注意力)
+            # ================================================================
+            MemoryAttention,  # MemoryAttention: 记忆增强注意力(可学习码本)
         }
     )
     repeat_modules = frozenset(  # modules with 'repeat' arguments
@@ -1278,7 +1297,9 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                  DMAF, QualityWeightedFusion, EdgeBlendFusion, EI2Fusion,
                  ASFFFusion, Att_HAFFormer, Att_CrossAttention_M,
                  PhaseGuidedFilter, C2Former_Fusion,
-                 RFAF_Fusion):  # 多输入模块(from为列表), 在base_modules之前处理
+                 RFAF_Fusion,
+                 SCA, GFM, EDS,
+                 ProgressiveAgg, Aggregation):  # 多输入模块(from为列表), 在base_modules之前处理
             c1 = [ch[x] for x in f]
             c2 = args[0]
             args = [c1, c2, *args[1:]]

@@ -136,5 +136,21 @@ from .fusion.ASFFFusion import *      # ASFFFusion: 自适应空间特征融合(
 from .conv.SPDConv import *            # SPDConv: 空间到深度卷积, 保持分辨率的小目标增强
 from .conv.CSPOmniKernel import *      # CSPOmniKernel: CSP多尺度全方向卷积+频域门控
 
+# 2026-07-07 新增模块 (来自 exps/HVPNet — RGB-T 显著目标检测)
+from .attention.SRA import *          # SRA: Strip Recurrent Attention, 条带循环注意力
+from .fusion.SCA import *             # SCA: Spatial-Channel RGB-T Fusion
+from .fusion.GFM import *             # GFM: Global Fusion Module, 全局融合模块(SAttention)
+from .fusion.EDS import *             # EDS: Edge-aware Dynamic Sampling, 边缘感知融合
+from .attention.HA import *           # HA: Holistic Attention, 全局注意力精炼
+from .conv.RFBBranch import *         # RFBBranch: 4分支非对称RFB(与BasicRFB不同)
+from .conv.COI import *               # COI: Conv-One-Identity 三重残差
+
+# 2026-07-07 新增模块 (来自 exps/rmae-progress — ProGRess 渐进式融合)
+from .neck.ProgressiveAgg import *    # ProgressiveAgg: 渐进式特征聚合
+from .neck.Aggregation import *       # Aggregation: 3尺度密集注意力聚合
+
+# 2026-07-07 新增模块 (来自 exps/UCMNet — 记忆增强注意力)
+from .attention.MemoryAttention import *  # MemoryAttention: 记忆增强注意力(可学习码本)
+
 # YOLO 包装器 (必须在独立模块之后导入)
 from .common import *
