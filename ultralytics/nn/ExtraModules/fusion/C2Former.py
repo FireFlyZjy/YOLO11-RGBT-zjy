@@ -423,8 +423,9 @@ class C2FormerSingle(nn.Module):
         # 分割通道为两半
         vis_x, lwir_x = x.split(self.half_nc, dim=1)
 
-        # ---- Key/Value 空间下采样 ----
-        if self.sr_ratio > 1:
+        # ---- Key/Value 空间下采样（getattr 兼容旧 checkpoint） ----
+        sr_ratio = getattr(self, 'sr_ratio', 1)
+        if sr_ratio > 1:
             vis_pooled = self.sr(vis_x)
             lwir_pooled = self.sr(lwir_x)
             n_sampled = vis_pooled.shape[2] * vis_pooled.shape[3]
