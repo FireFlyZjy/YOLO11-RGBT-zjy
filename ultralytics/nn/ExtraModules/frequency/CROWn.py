@@ -19,7 +19,7 @@ CROWn: Coset-fibRated micrO-local co-attention Modules
 
 用法:
     μPCAD_2D: [-1, 1, μPCAD_2D, [c2, heads, sr_ratio]]
-    C2PSA_μPCAD: [-1, 1, C2PSA_μPCAD, [c2]]
+    C2PSA_muPCAD: [-1, 1, C2PSA_muPCAD, [c2]]
 """
 
 import torch
@@ -327,12 +327,12 @@ class μPCAD_2D_NoDown(nn.Module):
         return self.out_bn(self.out_proj(fused))
 
 
-class C2PSA_μPCAD(nn.Module):
+class C2PSA_muPCAD(nn.Module):
     """
-    C2PSA_μPCAD: 集成 μPCAD 的 C2PSA 模块
+    C2PSA_muPCAD: 集成 μPCAD 的 C2PSA 模块
 
     机制: Split-Concat 结构 + μPCAD 处理一个分支
-    用法: [-1, 1, C2PSA_μPCAD, [c2]]
+    用法: [-1, 1, C2PSA_muPCAD, [c2]]
 
     参数:
         c1: 输入通道数
@@ -343,7 +343,7 @@ class C2PSA_μPCAD(nn.Module):
     """
     def __init__(self, c1, c2, n=1, e=0.5, heads=4):
         super().__init__()
-        assert c1 == c2, f"C2PSA_μPCAD requires c1 == c2, got c1={c1}, c2={c2}"
+        assert c1 == c2, f"C2PSA_muPCAD requires c1 == c2, got c1={c1}, c2={c2}"
         self.c = int(c1 * e)
         self.cv1 = nn.Conv2d(c1, 2 * self.c, 1, 1, bias=False)
         self.bn1 = nn.BatchNorm2d(2 * self.c)

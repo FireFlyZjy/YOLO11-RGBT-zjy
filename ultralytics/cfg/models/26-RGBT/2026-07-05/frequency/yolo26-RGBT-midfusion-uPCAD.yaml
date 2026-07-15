@@ -1,7 +1,7 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
 # μPCAD_2D: 微观多相共注意力降采样器 (来自 CROWn)
-# 改动: 层25 C2PSA → C2PSA_μPCAD (小波变换+跨源注意力)
+# 改动: 层25 C2PSA → C2PSA_muPCAD (小波变换+跨源注意力)
 # 原位替换, 无层号位移
 #
 # 论文: CROWn (Coset-fibRated micrO-local co-attention Network)
@@ -57,7 +57,7 @@ backbone:
   - [[10, 20], 1, Concat, [1]]  # cat backbone P5   23
 
   - [ -1, 1, SPPF, [ 1024, 5, 3, True ] ] # 24
-  - [ -1, 1, C2PSA_μPCAD, [ 1024 ] ] # 25 (原 C2PSA → C2PSA_μPCAD)
+  - [ -1, 1, C2PSA_muPCAD, [ 1024 ] ] # 25 (原 C2PSA → C2PSA_muPCAD)
 
 # YOLO26s head
 head:

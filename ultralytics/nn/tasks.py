@@ -1229,7 +1229,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             # 2026-07-05 新增模块 (CROWn微观多相共注意力)
             # ================================================================
             μPCAD_2D,         # μPCAD_2D: 微观多相共注意力降采样器, 小波+跨源注意力
-            C2PSA_μPCAD,      # C2PSA_μPCAD: 集成μPCAD的C2PSA
+            C2PSA_muPCAD,      # C2PSA_muPCAD: 集成μPCAD的C2PSA
             CrossSourceMHA,   # CrossSourceMHA: 跨源多头注意力
             # ================================================================
             # 2026-07-07 新增模块 (HVPNet: RGB-T 显著目标检测)
