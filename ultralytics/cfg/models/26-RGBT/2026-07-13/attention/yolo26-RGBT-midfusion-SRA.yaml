@@ -14,7 +14,7 @@ ch: 4
 backbone:
   - [-1, 1, Silence, []]  # 0
   - [0, 1, SilenceChannel, [0,3]]  # 1-vis
-  - [-1, 1, SRA, [64, 4, 7]]    # 2 Conv→SRA
+  - [-1, 1, SRA, [64, 4, 32]]   # 2 Conv→SRA (下采样32x, 640→20, 防OOM)
   - [-1, 1, Conv, [128, 3, 2]]
   - [-1, 2, C3k2, [256, False, 0.25]]
   - [-1, 1, SRA, [256, 4, 7]]   # 5 Conv→SRA
@@ -26,7 +26,7 @@ backbone:
 
   # infrared
   - [0, 1, SilenceChannel, [3,4]]  # 11-ir
-  - [-1, 1, SRA, [64, 4, 7]]    # 12 Conv→SRA
+  - [-1, 1, SRA, [64, 4, 32]]   # 12 Conv→SRA (下采样32x, 640→20, 防OOM)
   - [-1, 1, Conv, [128, 3, 2]]
   - [-1, 2, C3k2, [256, False, 0.25]]
   - [-1, 1, SRA, [256, 4, 7]]   # 15 Conv→SRA
