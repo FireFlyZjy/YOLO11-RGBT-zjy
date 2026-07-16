@@ -1,6 +1,6 @@
 # Ultralytics 🚀 AGPL-3.0 License - https://ultralytics.com/license
 
-# μPCAD_2D: 微观多相共注意力降采样器 (来自 CROWn)
+# muPCAD_2D: 微观多相共注意力降采样器 (来自 CROWn)
 # 改动: 层25 C2PSA → C2PSA_muPCAD (小波变换+跨源注意力)
 # 原位替换, 无层号位移
 #

@@ -113,7 +113,7 @@ from .fusion.MARSS import *  # REM, RADE, RFAF_Fusion, RADM, C2PSA_RADM
 from .conv.CKConv import *  # CKConv, C3k2_CKConv
 
 # 2026-07-05 新增模块 (CROWn微观多相共注意力)
-from .frequency.CROWn import *  # μPCAD_2D, C2PSA_muPCAD, CrossSourceMHA
+from .frequency.CROWn import *  # muPCAD_2D, C2PSA_muPCAD, CrossSourceMHA
 
 # 2026-06-21 新增模块 (来自 yoloair-main)
 # --- attention/ 新增注意力 ---

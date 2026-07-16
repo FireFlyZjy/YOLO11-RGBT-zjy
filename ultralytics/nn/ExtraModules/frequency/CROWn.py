@@ -18,7 +18,7 @@ CROWn: Coset-fibRated micrO-local co-attention Modules
     - CROWn: 小波变换 + 跨源注意力，多尺度特征融合
 
 用法:
-    μPCAD_2D: [-1, 1, μPCAD_2D, [c2, heads, sr_ratio]]
+    muPCAD_2D: [-1, 1, muPCAD_2D, [c2, heads, sr_ratio]]
     C2PSA_muPCAD: [-1, 1, C2PSA_muPCAD, [c2]]
 """
 
@@ -142,9 +142,9 @@ class CrossSourceMHA(nn.Module):
         return self.proj(out)
 
 
-class μPCAD_2D(nn.Module):
+class muPCAD_2D(nn.Module):
     """
-    μPCAD_2D: 微观多相共注意力降采样器 (2D 版本)
+    muPCAD_2D: 微观多相共注意力降采样器 (2D 版本)
 
     机制:
         1. Max/Avg 池化 + 小波分解 → 多尺度特征
@@ -158,7 +158,7 @@ class μPCAD_2D(nn.Module):
         - 跨源注意力让不同池化方式的特征交互
         - 适合频域特征融合
 
-    用法: [-1, 1, μPCAD_2D, [c2, heads, sr_ratio]]
+    用法: [-1, 1, muPCAD_2D, [c2, heads, sr_ratio]]
 
     参数:
         c1: 输入通道数
@@ -242,11 +242,11 @@ class μPCAD_2D(nn.Module):
         return self.out_bn(self.out_proj(fused))
 
 
-class μPCAD_2D_NoDown(nn.Module):
+class muPCAD_2D_NoDown(nn.Module):
     """
-    μPCAD_2D_NoDown: 微观多相共注意力模块 (无下采样版本)
+    muPCAD_2D_NoDown: 微观多相共注意力模块 (无下采样版本)
 
-    与 μPCAD_2D 相同的机制，但不进行空间下采样
+    与 muPCAD_2D 相同的机制，但不进行空间下采样
     用于 C2PSA 包装器中，保持空间尺寸不变
     """
     def __init__(self, c1, c2, heads=4, sr_ratio=2, mlp_ratio=4, drop=0.0):
@@ -348,7 +348,7 @@ class C2PSA_muPCAD(nn.Module):
         self.cv1 = nn.Conv2d(c1, 2 * self.c, 1, 1, bias=False)
         self.bn1 = nn.BatchNorm2d(2 * self.c)
         self.act = nn.SiLU()
-        self.m = nn.Sequential(*[μPCAD_2D_NoDown(self.c, self.c, heads=heads) for _ in range(n)])
+        self.m = nn.Sequential(*[muPCAD_2D_NoDown(self.c, self.c, heads=heads) for _ in range(n)])
         self.cv2 = nn.Conv2d(2 * self.c, c2, 1, 1, bias=False)
         self.bn2 = nn.BatchNorm2d(c2)
 
