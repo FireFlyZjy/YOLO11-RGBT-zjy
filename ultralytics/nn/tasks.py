@@ -1260,10 +1260,10 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             PPA,              # PPA: 并行化注意力设计 红外小目标
             DASI,             # DASI: 维度感知选择性集成 红外小目标
             StripBlock,       # StripBlock: 大型条带卷积 2025
+            SHSABlock,        # SHSABlock: 单头自注意力块 CVPR2024
             C2f_SHViT,        # C2f_SHViT: 单头自注意力 CVPR2024
             DWR,              # DWR: 可扩张残差注意力
             MultiDilatelocalAttention, # MSDA: 多尺度空洞注意力
-            C2PSA_MSDA,       # C2PSA_MSDA: 集成MSDA的C2PSA
             ChannelAttention_HSFPN, # HS-FPN: 多级特征融合金字塔
             DualAttentionBlock,  # DAB: 双注意力块
             C3k2_DAB,         # C3k2_DAB: 集成DAB的C3k2
@@ -1292,10 +1292,10 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C2f_DCN,
             # CMFADet模块 (C2f/C3k2子类，需要n参数)
             Att_SFEM, Att_IRAFAB,
-            C2PSA_MSDA,
             C3k2_PConv,
             C3k2_DAB,
             C2f_SHViT,
+            SHSABlock,
         }
     )
     # print(globals())

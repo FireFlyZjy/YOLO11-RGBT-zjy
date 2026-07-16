@@ -78,13 +78,16 @@ class SHSA(nn.Module):
 
 class SHSABlock(nn.Module):
     """Single-Head Self-Attention Block"""
-    def __init__(self, dim, qk_dim=16, pdim=32):
+    def __init__(self, c1, c2, qk_dim=16, pdim=32):
         super().__init__()
+        self.proj = nn.Conv2d(c1, c2, 1) if c1 != c2 else nn.Identity()
+        dim = c2
         self.conv = Residual(Conv2d_BN(dim, dim, 3, 1, 1, groups=dim, bn_weight_init=0))
         self.mixer = Residual(SHSA(dim, qk_dim, pdim))
         self.ffn = Residual(SHSABlock_FFN(dim, int(dim * 2)))
 
     def forward(self, x):
+        x = self.proj(x)
         return self.ffn(self.mixer(self.conv(x)))
 
 
