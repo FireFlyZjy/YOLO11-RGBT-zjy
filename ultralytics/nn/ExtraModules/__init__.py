@@ -152,5 +152,20 @@ from .neck.Aggregation import *       # Aggregation: 3尺度密集注意力聚�
 # 2026-07-07 新增模块 (来自 exps/UCMNet — 记忆增强注意力)
 from .attention.MemoryAttention import *  # MemoryAttention: 记忆增强注意力(可学习码本)
 
+# 2026-07-13 新增模块 (来自 exps HTML教程 — CSDN YOLO11魔术师专栏)
+from .conv.PConv_Windmill import *    # PConv: 风车形卷积 AAAI2025
+from .attention.CAMixing import *     # CAMixing: 卷积-注意融合模块
+from .attention.MDCR import *         # MDCR: 多膨胀通道精炼 红外小目标
+from .attention.PPA import *          # PPA: 并行化注意力设计 红外小目标
+from .attention.DASI import *         # DASI: 维度感知选择性集成 红外小目标
+from .attention.StripBlock import *   # StripBlock: 大型条带卷积 StripR-CNN 2025
+from .attention.SHViT import *        # SHViT: 单头自注意力 CVPR2024
+from .attention.DWR import *          # DWR: 可扩张残差注意力
+from .attention.MSDA import *         # MSDA: 多尺度空洞注意力
+from .attention.HSFPN import *        # HS-FPN: 多级特征融合金字塔
+from .attention.DAB import *          # DAB: 双注意力块 遥感去雾
+from .conv.CMUNeXt import *          # CMUNeXt: 大核倒瓶颈设计
+from .neck.DySample import *          # DySample: 动态上采样
+
 # YOLO 包装器 (必须在独立模块之后导入)
 from .common import *
