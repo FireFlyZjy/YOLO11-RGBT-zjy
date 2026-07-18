@@ -19,7 +19,7 @@ ch: 4
 backbone:
   - [-1, 1, Silence, []]  # 0
   - [0, 1, SilenceChannel, [0,3]]  # 1-vis
-  - [-1, 1, RFBBranch, [64]]   # 2 Conv→RFBBranch
+  - [-1, 1, RFBBranch, [64, 2]]   # 2 Conv→RFBBranch (stride=2降采样)
   - [-1, 1, Conv, [128, 3, 2]]
   - [-1, 2, C3k2, [256, False, 0.25]]
   - [-1, 1, RFBBranch, [256]]  # 5 Conv→RFBBranch
@@ -31,7 +31,7 @@ backbone:
 
   # infrared
   - [0, 1, SilenceChannel, [3,4]]  # 11-ir
-  - [-1, 1, RFBBranch, [64]]   # 12 Conv→RFBBranch
+  - [-1, 1, RFBBranch, [64, 2]]   # 12 Conv→RFBBranch (stride=2降采样)
   - [-1, 1, Conv, [128, 3, 2]]
   - [-1, 2, C3k2, [256, False, 0.25]]
   - [-1, 1, RFBBranch, [256]]  # 15 Conv→RFBBranch

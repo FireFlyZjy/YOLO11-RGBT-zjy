@@ -35,9 +35,9 @@ class BasicConv2d(nn.Module):
 class RFBBranch(nn.Module):
     """RFBBranch — 4分支非对称感受野增强"""
 
-    def __init__(self, c1, c2):
+    def __init__(self, c1, c2, s=1):
         super().__init__()
-        self.proj = nn.Conv2d(c1, c2, 1) if c1 != c2 else nn.Identity()
+        self.proj = nn.Conv2d(c1, c2, 1, stride=s) if c1 != c2 or s > 1 else nn.Identity()
 
         self.relu = nn.ReLU(True)
 
