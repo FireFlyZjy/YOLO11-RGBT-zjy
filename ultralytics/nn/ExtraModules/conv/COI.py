@@ -26,10 +26,12 @@ class COI(nn.Module):
 
     def __init__(self, c1, c2, k=3, s=1):
         super().__init__()
-        self.proj = nn.Conv2d(c1, c2, 1) if c1 != c2 else nn.Identity()
+        # proj 同时负责通道对齐和空间降采样（s>1时）
+        self.proj = nn.Conv2d(c1, c2, 1, stride=s) if c1 != c2 or s > 1 else nn.Identity()
 
-        self.dw = nn.Conv2d(c2, c2, kernel_size=k, padding=k // 2, stride=s, groups=c2)
-        self.conv1_1 = nn.Conv2d(c2, c2, kernel_size=1, stride=1)
+        # 内部三条路径均无 stride（空间尺寸由 proj 统一处理）
+        self.dw = nn.Conv2d(c2, c2, kernel_size=k, padding=k // 2, groups=c2)
+        self.conv1_1 = nn.Conv2d(c2, c2, kernel_size=1)
         self.bn1 = nn.BatchNorm2d(c2)
         self.bn2 = nn.BatchNorm2d(c2)
         self.bn3 = nn.BatchNorm2d(c2)
