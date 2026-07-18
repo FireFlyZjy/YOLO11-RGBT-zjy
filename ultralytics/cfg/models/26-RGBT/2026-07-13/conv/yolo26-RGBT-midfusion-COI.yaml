@@ -15,8 +15,8 @@ ch: 4
 backbone:
   - [-1, 1, Silence, []]  # 0
   - [0, 1, SilenceChannel, [0,3]]  # 1-vis
-  - [-1, 1, COI, [64]]    # 2 Conv→COI
-  - [-1, 1, COI, [128]]   # 3 Conv→COI
+  - [-1, 1, COI, [64, 3, 2]]   # 2 Conv→COI (stride=2降采样)
+  - [-1, 1, COI, [128, 3, 2]]  # 3 Conv→COI (stride=2降采样)
   - [-1, 2, C3k2, [256, False, 0.25]]
   - [-1, 1, COI, [256]]   # 5 Conv→COI
   - [-1, 2, C3k2, [512, False, 0.25]]
@@ -27,8 +27,8 @@ backbone:
 
   # infrared
   - [0, 1, SilenceChannel, [3,4]]  # 11-ir
-  - [-1, 1, COI, [64]]    # 12 Conv→COI
-  - [-1, 1, COI, [128]]   # 13 Conv→COI
+  - [-1, 1, COI, [64, 3, 2]]   # 12 Conv→COI (stride=2降采样)
+  - [-1, 1, COI, [128, 3, 2]]  # 13 Conv→COI (stride=2降采样)
   - [-1, 2, C3k2, [256, False, 0.25]]
   - [-1, 1, COI, [256]]   # 15 Conv→COI
   - [-1, 2, C3k2, [512, False, 0.25]]
