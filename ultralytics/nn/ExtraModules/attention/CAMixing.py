@@ -35,10 +35,15 @@ class LayerNorm(nn.Module):
 
 class CAFMAttention(nn.Module):
     """卷积和注意力融合注意力模块"""
-    def __init__(self, dim, num_heads, bias=False):
+    def __init__(self, dim, num_heads, bias=False, sr_ratio=8):
         super().__init__()
         self.num_heads = num_heads
         self.temperature = nn.Parameter(torch.ones(num_heads, 1, 1))
+        self.sr_ratio = sr_ratio
+        if sr_ratio > 1:
+            self.sr = nn.AvgPool2d(kernel_size=sr_ratio, stride=sr_ratio)
+        else:
+            self.sr = nn.Identity()
 
         self.qkv = nn.Conv2d(dim, dim * 3, kernel_size=1, bias=bias)
         self.qkv_dwconv = nn.Conv2d(dim * 3, dim * 3, kernel_size=3, stride=1, padding=1,
@@ -50,9 +55,15 @@ class CAFMAttention(nn.Module):
         qkv = self.qkv_dwconv(self.qkv(x))
         q, k, v = qkv.chunk(3, dim=1)
 
+        # 对 k/v 做空间下采样，降低注意力矩阵大小
+        if self.sr_ratio > 1:
+            k = self.sr(k)
+            v = self.sr(v)
+        _, _, h_k, w_k = k.shape
+
         q = q.reshape(b, self.num_heads, c // self.num_heads, h * w).permute(0, 1, 3, 2)
-        k = k.reshape(b, self.num_heads, c // self.num_heads, h * w)
-        v = v.reshape(b, self.num_heads, c // self.num_heads, h * w).permute(0, 1, 3, 2)
+        k = k.reshape(b, self.num_heads, c // self.num_heads, h_k * w_k)
+        v = v.reshape(b, self.num_heads, c // self.num_heads, h_k * w_k).permute(0, 1, 3, 2)
 
         attn = (q @ k) * self.temperature
         attn = attn.softmax(dim=-1)
@@ -88,12 +99,12 @@ class MSFN(nn.Module):
 
 class CAMixingTransformerBlock(nn.Module):
     """CAMixing Transformer Block — 卷积-注意融合模块"""
-    def __init__(self, c1, c2, num_heads=4, ffn_expansion_factor=2.66):
+    def __init__(self, c1, c2, num_heads=4, ffn_expansion_factor=2.66, sr_ratio=8):
         super().__init__()
         self.proj = nn.Conv2d(c1, c2, 1) if c1 != c2 else nn.Identity()
 
         self.norm1 = LayerNorm(c2)
-        self.attn = CAFMAttention(c2, num_heads)
+        self.attn = CAFMAttention(c2, num_heads, sr_ratio=sr_ratio)
         self.norm2 = LayerNorm(c2)
         self.ffn = MSFN(c2, ffn_expansion_factor)
 
