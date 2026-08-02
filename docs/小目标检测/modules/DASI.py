@@ -42,9 +42,9 @@ class Bag(nn.Module):
 
 class DASI(nn.Module):
     """Dimension-Aware Selective Integration — 维度感知选择性集成"""
-    def __init__(self, c1, c2, s=1):
+    def __init__(self, c1, c2):
         super().__init__()
-        self.proj = nn.Conv2d(c1, c2, 1, stride=s) if c1 != c2 or s > 1 else nn.Identity()
+        self.proj = nn.Conv2d(c1, c2, 1) if c1 != c2 else nn.Identity()
 
         self.bag = Bag()
         self.tail_conv = nn.Sequential(

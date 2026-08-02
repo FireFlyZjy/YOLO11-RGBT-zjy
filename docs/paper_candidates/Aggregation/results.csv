@@ -1,0 +1,2 @@
+Time,Model,Model_YAML,Data,Pretrained,Precision,Recall,mAP50,mAP50-95,FLOPs(G),Params(M),FPS,Preprocess(ms),Inference(ms),Postprocess(ms),Total(ms),use_simotm,Channels,Batch,Workers,Device,imgsz,Epochs,Optimizer,Project,Name
+2026-07-25 17:58:41,yolo26s-RGBT-midfusion-Aggregation,ultralytics/cfg/models/26-RGBT/2026-07-13/neck/yolo26-RGBT-midfusion-Aggregation.yaml,ultralytics/cfg/datasets/flir.yaml,weights/yolo26s.pt,0.8659,0.7833,0.8674,0.5058,232.24,33.67,20.69,0.71,42.05,5.57,48.33,RGBT,4,4,0,0,640,100,SGD,runs/FLIR/26dual-test,yolo26s-RGBT-midfusion-Aggregation
