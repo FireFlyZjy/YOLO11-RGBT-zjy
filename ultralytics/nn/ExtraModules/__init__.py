@@ -30,6 +30,9 @@ from .fusion.FCMMFusion import *
 from .fusion.DMAF import *
 from .fusion.EI2Fusion import *
 
+# 2026-08-04 模块 (VCP-DCN - DAI融合)
+from .fusion.DAIFusion import *
+
 # 2026-05-19 模块 (CMFADet)
 from .attention.SFEM import *
 from .attention.IR_AFAB import *

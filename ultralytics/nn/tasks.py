@@ -1322,7 +1322,8 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                  PhaseGuidedFilter, C2Former_Fusion,
                  RFAF_Fusion,
                  SCA, GFM, EDS,
-                 ProgressiveAgg, Aggregation):  # 多输入模块(from为列表), 在base_modules之前处理
+                 ProgressiveAgg, Aggregation,
+                 DAIFusion):  # 多输入模块(from为列表), 在base_modules之前处理
             c1 = [ch[x] for x in f]
             c2 = args[0]
             args = [c1, c2, *args[1:]]
