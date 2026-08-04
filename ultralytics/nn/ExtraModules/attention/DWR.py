@@ -25,9 +25,12 @@ class Conv(nn.Module):
 
 class DWR(nn.Module):
     """Dilated-Wise Residual attention — 可扩张残差注意力"""
-    def __init__(self, c1, c2):
+    def __init__(self, c1, c2, stride=1):
         super().__init__()
-        self.proj = nn.Conv2d(c1, c2, 1) if c1 != c2 else nn.Identity()
+        if stride > 1 or c1 != c2:
+            self.proj = nn.Conv2d(c1, c2, 1, stride=stride, bias=False)
+        else:
+            self.proj = nn.Identity()
 
         self.conv_3x3 = Conv(c2, c2 // 2, 3)
         self.conv_d1 = Conv(c2 // 2, c2 // 2, 3, d=1)
