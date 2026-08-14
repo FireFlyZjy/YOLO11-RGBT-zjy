@@ -5,7 +5,7 @@
 | 项目 | 内容 |
 |------|------|
 | **方案名** | DASI-ProgAgg |
-| **YAML** | `2026-08-02/neck/yolo26-RGBT-midfusion-DASI-ProgAgg.yaml` |
+| **YAML** | `flir-nc3/combo/yolo26-RGBT-midfusion-DASI-ProgAgg.yaml` |
 | **代码改动** | 无（复用现有 DASI + ProgressiveAgg） |
 | **层号位移** | Neck +2（插入 ProgressiveAgg 层 32） |
 | **日期** | 2026-08-02 |
@@ -90,7 +90,7 @@ FLOPs 约 175G，在 DASI(142G)+ProgAgg(43G) 之间，叠加效应显著。
 
 ## 相关文件
 
-- YAML: `ultralytics/cfg/models/26-RGBT/2026-08-02/neck/yolo26-RGBT-midfusion-DASI-ProgAgg.yaml`
+- YAML: `ultralytics/cfg/models/26-RGBT/flir-nc3/combo/yolo26-RGBT-midfusion-DASI-ProgAgg.yaml`
 - DASI 源码: `ultralytics/nn/ExtraModules/attention/DASI.py`
 - ProgressiveAgg 源码: `ultralytics/nn/ExtraModules/neck/ProgressiveAgg.py`
 - DASI module card: `docs/paper_candidates/DASI/module_card.md`

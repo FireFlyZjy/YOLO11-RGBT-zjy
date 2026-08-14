@@ -1,0 +1,12 @@
+# LLVIP dataset (RGBT 双模态, 仅 person 一类)
+# train/val 指向可见光 images/visible 目录
+# 训练时 IR 配对: pairs_rgb_ir=['visible','infrared']  (默认规则, 将 visible 替换为 infrared 得到红外目录)
+
+train: /home/lyh/zjy/dataset/LLVIP/images/visible/train # 12025 images
+val: /home/lyh/zjy/dataset/LLVIP/images/visible/val # 3463 images
+
+# number of classes
+nc: 1
+
+# class names
+names: ["person",]
