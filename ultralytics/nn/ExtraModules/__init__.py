@@ -30,6 +30,9 @@ from .fusion.FCMMFusion import *
 from .fusion.DMAF import *
 from .fusion.EI2Fusion import *
 
+# 2026-08-06 模块 (原创融合: DCAF - 差异补偿自适应融合)
+from .fusion.DCAF import *
+
 # 2026-08-04 模块 (VCP-DCN - DAI融合)
 from .fusion.DAIFusion import *
 
