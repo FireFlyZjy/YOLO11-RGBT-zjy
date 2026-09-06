@@ -1,0 +1,30 @@
+# ============================================================================
+# KAIST / LLVIP 论文达标实验清单 (单一真相源)
+#
+# 该文件由以下脚本共用，增删实验只需改这一处:
+#   - train_kaist_llvip.sh    (从头训练全部实验)
+#   - resume_kaist_llvip.sh   (自适应续训: 跳过已完成 / 续训中断 / 新训未完成)
+#
+# 格式说明 (每行一个实验, | 分隔, 首行为头):
+#   NAME|RELATIVE_YAML|EPOCHS|BATCH
+#     NAME            实验名称, 结果保存为 runs/<DATASET>/yolo26s-RGBT-midfusion-<NAME>
+#     RELATIVE_YAML   相对于 NC1_DIR 的模型 YAML 路径
+#     EPOCHS          训练轮数
+#     BATCH           批大小
+#
+# 跳过规则:
+#   - 空行           忽略
+#   - # 开头的行     忽略
+#
+# NC1_DIR 默认 = ultralytics/cfg/models/26-RGBT/kaist-llvip-nc1
+# ============================================================================
+
+# NAME|RELATIVE_YAML|EPOCHS|BATCH
+baseline|origin/yolo26-RGBT-midfusion.yaml|100|4
+DASI-ProgAgg|combo/yolo26-RGBT-midfusion-DASI-ProgAgg.yaml|100|4
+DASI|2026-07-16/attention/yolo26-RGBT-midfusion-DASI.yaml|100|4
+DWR|2026-07-16/attention/yolo26-RGBT-midfusion-DWR.yaml|100|4
+COI|2026-07-13/conv/yolo26-RGBT-midfusion-COI.yaml|100|2
+COI-150|2026-07-13/conv/yolo26-RGBT-midfusion-COI.yaml|150|2
+Aggregation|2026-07-13/neck/yolo26-RGBT-midfusion-Aggregation.yaml|100|4
+ProgressiveAgg|2026-07-13/neck/yolo26-RGBT-midfusion-ProgressiveAgg.yaml|100|4

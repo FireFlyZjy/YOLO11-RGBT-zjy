@@ -6,6 +6,7 @@
 #   bash train_kaist_llvip.sh llvip    # 训练 LLVIP
 # 在项目根目录 /home/lyh/zjy/code/YOLOv11to26-RGBT 下运行
 # 模型 YAML 取自 kaist-llvip-nc1/ (nc=1, 已就绪), 无需任何准备步骤
+# 实验清单从 configs/experiments_kaist_llvip.txt 读取 (与 resume_kaist_llvip.sh 共用)
 # 详细说明见 docs/kaist_llvip_training.md 与 docs/指令.md 第十三章
 # ============================================================================
 set -e
@@ -28,23 +29,26 @@ case "$DATASET" in
 esac
 
 NC1_DIR="ultralytics/cfg/models/26-RGBT/kaist-llvip-nc1"
+CONFIG_FILE="configs/experiments_kaist_llvip.txt"
 
-# ---- 实验配置: 名称|模型yaml(相对NC1_DIR)|epochs|batch ----
-CONFIGS=(
-  "baseline|origin/yolo26-RGBT-midfusion.yaml|100|4"
-  "DASI-ProgAgg|combo/yolo26-RGBT-midfusion-DASI-ProgAgg.yaml|100|4"
-  "DASI|2026-07-16/attention/yolo26-RGBT-midfusion-DASI.yaml|100|4"
-  "DWR|2026-07-16/attention/yolo26-RGBT-midfusion-DWR.yaml|100|4"
-  "COI|2026-07-13/conv/yolo26-RGBT-midfusion-COI.yaml|100|2"
-  "COI-150|2026-07-13/conv/yolo26-RGBT-midfusion-COI.yaml|150|2"
-  "Aggregation|2026-07-13/neck/yolo26-RGBT-midfusion-Aggregation.yaml|100|4"
-  "ProgressiveAgg|2026-07-13/neck/yolo26-RGBT-midfusion-ProgressiveAgg.yaml|100|4"
-)
+# ---- 从配置文件加载实验清单 (与 resume_kaist_llvip.sh 共用) ----
+[ -f "$CONFIG_FILE" ] || { echo "[错误] 实验配置文件不存在: $CONFIG_FILE"; exit 1; }
+CONFIGS=()
+while IFS= read -r line; do
+  # 跳过空行和注释行
+  [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+  CONFIGS+=("$line")
+done < "$CONFIG_FILE"
+
+if [ ${#CONFIGS[@]} -eq 0 ]; then
+  echo "[错误] 配置文件 $CONFIG_FILE 中没有有效实验条目"
+  exit 1
+fi
 
 # ---- 前置校验: 数据集 yaml 与所有模型 yaml 必须存在 ----
 [ -f "$DATA" ] || { echo "[错误] 数据集 yaml 不存在: $DATA"; exit 1; }
-for c in "${CONFIGS[@]}"; do
-  IFS='|' read -r _ YAML _ _ <<< "$c"
+for (( i=${#CONFIGS[@]}-1; i>=0; i-- )); do
+  IFS='|' read -r _ YAML _ _ <<< "${CONFIGS[$i]}"
   if [ ! -f "$NC1_DIR/$YAML" ]; then
     echo "[错误] 模型 yaml 不存在: $NC1_DIR/$YAML"
     echo "       若为新模块, 请先按 docs/指令.md 13.4 移入 flir-nc3/ 并生成 nc=1 副本"
@@ -53,9 +57,10 @@ for c in "${CONFIGS[@]}"; do
 done
 
 echo "===================================================================="
-echo "  数据集: $DATA"
-echo "  保存到: $PROJECT/"
+echo "  数据集:   $DATA"
+echo "  保存到:   $PROJECT/"
 echo "  模型目录: $NC1_DIR"
+echo "  实验清单: $CONFIG_FILE  (${#CONFIGS[@]} 个)"
 echo "===================================================================="
 
 # ---- 逐个训练 ----
